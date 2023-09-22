@@ -17,7 +17,7 @@ namespace Basis2D{
             return out<<'('<<p.x<<','<<p.y<<')';
         }
         bool operator<(const Point&o)const{
-            return x==o.x?y<o.y:x<o.x;
+            return std::abs(x-o.x)<EPS?y<o.y:x<o.x;
         }
         Point operator+(const Point&o)const{
             return {x+o.x,y+o.y};
@@ -34,8 +34,11 @@ namespace Basis2D{
         bool operator==(const Point&o)const{
             return between(o,o);
         }
+        double norm2()const{
+            return (*this) * (*this);
+        }
         double norm()const{
-            return sqrt((*this) * (*this));
+            return std::sqrt(norm2());
         }
         double dot(const Point&o)const{
             return x*o.x+y*o.y;
@@ -44,14 +47,14 @@ namespace Basis2D{
             return x*o.y-y*o.x;
         }
         bool between(Point a,Point b)const{
-            if(abs((a.x-x)*(b.y-y)-(b.x-x)*(a.y-y))>EPS)return false;
+            if(std::abs((a.x-x)*(b.y-y)-(b.x-x)*(a.y-y))>EPS)return false;
             if(a.x>b.x)std::swap(a.x,b.x);
             if(a.y>b.y)std::swap(a.y,b.y);
             return a.x-EPS<=x&&x<=b.x+EPS &&
                 a.y-EPS<=y&&y<=b.y+EPS;
         }
         double theta()const{
-            return x+y?atan2(y,x):-INF;
+            return std::abs(x)+std::abs(y)>EPS?atan2(y,x):-INF;
         }
     };
     using Points = std::vector<Point>;
