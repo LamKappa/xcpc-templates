@@ -13,4 +13,11 @@ std::less<T>,
 __gnu_pbds::rb_tree_tag,
 __gnu_pbds::tree_order_statistics_node_update>;
 
+/*
+* useage:
+* order_rbtree<T> s;
+* s.find_by_order(index) returns iterator
+* s.order_of_key(value) returns unsigned
+*/
+
 #endif

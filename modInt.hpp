@@ -15,7 +15,6 @@ constexpr T qpow(T a,i64 b){
     }
     return res;
 }
-
 constexpr i64 mul(i64 a,i64 b,i64 p){
     i64 res = a*b - p*i64(1.L*a*b/p);
     res %= p;
