@@ -5,7 +5,7 @@
 struct HLD{
     int n;
     std::vector<int> sz, top, dpt, fa, in, out, seq;
-    std::vector<vector<int>> adj;
+    std::vector<std::vector<int>> adj;
     int cur;
     
     HLD(){}
@@ -14,15 +14,10 @@ struct HLD{
     }
     void init(int n){
         this->n = n;
-        sz.resize(n);
-        top.resize(n);
-        dpt.resize(n);
-        fa.resize(n);
-        in.resize(n);
-        out.resize(n);
-        seq.resize(n);
+        sz.resize(n); top.resize(n); dpt.resize(n);
+        fa.resize(n); in.resize(n); out.resize(n);
+        seq.resize(n); adj.assign(n,{});
         cur = 0;
-        adj.assign(n,{});
     }
     void add_edge(int u,int v){
         adj[u].push_back(v);
