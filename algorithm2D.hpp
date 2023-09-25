@@ -9,16 +9,19 @@
 namespace Algorithm2D{
     using namespace Basis2D;
     namespace Check_inside{
-        bool __check_inside_ray(Point&p, const Points&dots){
+        template<typename ForwardIt>
+        bool __check_inside_ray(const Point&p,
+                const ForwardIt&begin,
+                const ForwardIt&end){
             static std::mt19937 eng(std::random_device{}());
             static std::uniform_real_distribution<> dis(0,PI/2.);
             double K = dis(eng);
             double B = p.y - K*p.x;
 
             int cnt = 0;
-            for(int i=0;i<dots.size();i++){
-                int j = i+1==dots.size()?0:i+1;
-                Point pi{dots[i]}, pj{dots[j]}, pk;
+            for(auto i=begin;i!=end;i++){
+                auto j = std::next(i)==end?begin:std::next(i);
+                Point pi{*i}, pj{*j}, pk;
 
                 double k = (pi.y-pj.y) / (pi.x-pj.x);
                 double b = pi.y - k*pi.x;
@@ -31,13 +34,15 @@ namespace Algorithm2D{
             }
             return cnt&1;
         }
-        bool solve(Point&p, const Points&dots){
-            return __check_inside_ray(p, dots);
+        template<typename Iterable>
+        bool solve(const Point&p, const Iterable&dots){
+            return __check_inside_ray(p, dots.begin(), dots.end());
         }
     }
     namespace Closet_pair{
         typedef std::pair<int,int> resultType;
-        std::pair<resultType,double> __closet_pair_rec(const Points&dots){
+        template<typename RandomAccessable>
+        std::pair<resultType,double> __closet_pair_rec(const RandomAccessable&dots){
             resultType res;
             double resv = INF;
             std::vector<int> sorted(dots.size());
@@ -84,7 +89,8 @@ namespace Algorithm2D{
             rec(0, dots.size());
             return {res,resv};
         }
-        std::pair<resultType,double> __closet_pair_multiset(const Points&dots){
+        template<typename RandomAccessable>
+        std::pair<resultType,double> __closet_pair_multiset(const RandomAccessable&dots){
             resultType res;
             double resv = INF;
             std::vector<int> sortx(dots.size());
@@ -114,13 +120,16 @@ namespace Algorithm2D{
             }
             return {res,resv};
         }
-        std::pair<resultType,double> __solve(const Points&dots){
+        template<typename RandomAccessable>
+        std::pair<resultType,double> __solve(const RandomAccessable&dots){
             return __closet_pair_rec(dots);
         }
-        resultType solve_pair(const Points&dots){
+        template<typename RandomAccessable>
+        resultType solve_pair(const RandomAccessable&dots){
             return __solve(dots).first;
         }
-        double solve_dist(const Points&dots){
+        template<typename RandomAccessable>
+        double solve_dist(const RandomAccessable&dots){
             return __solve(dots).second;
         }
     }

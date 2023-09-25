@@ -34,11 +34,8 @@ namespace Basis2D{
         bool operator==(const Point&o)const{
             return between(o,o);
         }
-        double norm2()const{
-            return (*this) * (*this);
-        }
         double norm()const{
-            return std::sqrt(norm2());
+            return std::hypotl(x, y);
         }
         double dot(const Point&o)const{
             return x*o.x+y*o.y;

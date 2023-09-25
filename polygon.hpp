@@ -9,7 +9,9 @@
 namespace Polygon{
     using namespace Basis2D;
     namespace Chull{
-        Points __Graham_chull(const Points&_dots){
+        typedef Points __Chull;
+        template<typename Iterable>
+        __Chull __Graham_chull(const Iterable&_dots){
             Points dots{_dots};
             Point c = *std::min_element(dots.begin(), dots.end());
             std::sort(dots.begin(), dots.end(), [&c](auto a,auto b){
@@ -17,7 +19,7 @@ namespace Polygon{
                 double delta = ac.theta() - bc.theta();
                 return std::abs(delta)>EPS?delta<0:ac.norm()<bc.norm();
             });
-            Points H;
+            __Chull H;
             for(int i=0;i<dots.size();i++){
                 while(H.size()>1&&(H.back()-H[H.size()-2]).cross(dots[i]-H.back())<=0){
                     H.pop_back();
@@ -26,7 +28,8 @@ namespace Polygon{
             }
             return H;
         }
-        Points __Andrew_chull(const Points&_dots){
+        template<typename Iterable>
+        __Chull __Andrew_chull(const Iterable&_dots){
             Points dots{_dots};
             std::sort(dots.begin(),dots.end());
             std::vector<int> I;
@@ -46,18 +49,19 @@ namespace Polygon{
                 }
                 I.push_back(i);
             }
-            Points H(I.size()-1);
+            __Chull H(I.size()-1);
             for(int i=0;i<I.size()-1;i++) H[i] = dots[I[i]];
             return H;
         }
-        Points solve(const Points&dots){
+        template<typename Iterable>
+        __Chull solve(const Iterable&dots){
             if(dots.size()<3)return dots;
             return __Andrew_chull(dots);
         }
     }
     namespace Get_diameter{
         typedef std::pair<int,int> resultType;
-        std::pair<resultType,double> __get_diameter_rotating_calipers(const Points&dots){
+        std::pair<resultType,double> __get_diameter_rotating_calipers(const Chull::__Chull&dots){
             std::size_t n = dots.size();
             if(n<3)return {{0,n-1},(dots.back()-dots.front()).norm()};
             resultType res;
@@ -72,15 +76,18 @@ namespace Polygon{
             }
             return {res,resv};
         }
-        std::pair<resultType,double> __solve(const Points&dots, bool isPolygon){
+        template<typename Iterable>
+        std::pair<resultType,double> __solve(const Iterable&dots, bool isPolygon){
             auto get_diameter = __get_diameter_rotating_calipers;
             if(!isPolygon)return get_diameter(Chull::solve(dots));
             return get_diameter(dots);
         }
-        resultType solve_pair(const Points&dots, bool isPolygon = false){
+        template<typename Iterable>
+        resultType solve_pair(const Iterable&dots, bool isPolygon = false){
             return __solve(dots, isPolygon).first;
         }
-        double solve_dist(const Points&dots, bool isPolygon = false){
+        template<typename Iterable>
+        double solve_dist(const Iterable&dots, bool isPolygon = false){
             return __solve(dots, isPolygon).second;
         }
     }

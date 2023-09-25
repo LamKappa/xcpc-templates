@@ -1,4 +1,4 @@
-#ifdef RANDOM
+#ifndef RANDOM
 #define RANDOM
 // 随机
 
