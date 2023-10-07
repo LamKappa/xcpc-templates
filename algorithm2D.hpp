@@ -14,7 +14,7 @@ namespace Algorithm2D{
                 const ForwardIt&begin,
                 const ForwardIt&end){
             static std::mt19937 eng(std::random_device{}());
-            static std::uniform_real_distribution<> dis(0,PI/2.);
+            static std::uniform_real_distribution<> dis(EPS,INF);
             double K = dis(eng);
             double B = p.y - K*p.x;
 
@@ -34,9 +34,23 @@ namespace Algorithm2D{
             }
             return cnt&1;
         }
+        template<typename ForwardIt>
+        bool __check_inside_chull(const Point&p,
+                const ForwardIt&begin,
+                const ForwardIt&end){
+            for(auto i=begin;i!=end;i++){
+                auto j = std::next(i)==end?begin:std::next(i);
+                Point pi{*i}, pj{*j};
+                if((pi-p).cross(pi-pj)) return false;
+            }
+            return true;
+        }
         template<typename Iterable>
-        bool solve(const Point&p, const Iterable&dots){
-            return __check_inside_ray(p, dots.begin(), dots.end());
+        bool solve(const Point&p, const Iterable&dots, bool isChull = false){
+            if(dots.size()<3)return false;
+            auto check_inside = __check_inside_ray<typename Iterable::iterator>;
+            if(isChull) check_inside = __check_inside_chull<typename Iterable::iterator>;
+            return check_inside(p, dots.begin(), dots.end());
         }
     }
     namespace Closet_pair{

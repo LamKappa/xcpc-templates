@@ -77,18 +77,18 @@ namespace Polygon{
             return {res,resv};
         }
         template<typename Iterable>
-        std::pair<resultType,double> __solve(const Iterable&dots, bool isPolygon){
+        std::pair<resultType,double> __solve(const Iterable&dots, bool isChull){
             auto get_diameter = __get_diameter_rotating_calipers;
-            if(!isPolygon)return get_diameter(Chull::solve(dots));
+            if(!isChull)return get_diameter(Chull::solve(dots));
             return get_diameter(dots);
         }
         template<typename Iterable>
-        resultType solve_pair(const Iterable&dots, bool isPolygon = false){
-            return __solve(dots, isPolygon).first;
+        resultType solve_pair(const Iterable&dots, bool isChull = false){
+            return __solve(dots, isChull).first;
         }
         template<typename Iterable>
-        double solve_dist(const Iterable&dots, bool isPolygon = false){
-            return __solve(dots, isPolygon).second;
+        double solve_dist(const Iterable&dots, bool isChull = false){
+            return __solve(dots, isChull).second;
         }
     }
 }
