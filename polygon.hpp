@@ -35,7 +35,7 @@ namespace Polygon{
             std::vector<int> I;
             std::vector<bool> used(dots.size(), true);
             for(int i=0;i<dots.size();i++){
-                while(I.size()>1&&(dots[I.back()]-dots[I[I.size()-2]]).cross(dots[i]-dots[I.back()])<=0){
+                while(I.size()>1&&(dots[I.back()]-dots[I[I.size()-2]]).cross(dots[i]-dots[I.back()])>=0){
                     used[I.back()] = false; I.pop_back();
                 }
                 I.push_back(i);
@@ -44,7 +44,7 @@ namespace Polygon{
             std::size_t s = I.size();
             for(int i=dots.size()-2;i>=0;i--){
                 if(used[i]) continue;
-                while(I.size()>s&&(dots[I.back()]-dots[I[I.size()-2]]).cross(dots[i]-dots[I.back()])<=0){
+                while(I.size()>s&&(dots[I.back()]-dots[I[I.size()-2]]).cross(dots[i]-dots[I.back()])>=0){
                     I.pop_back();
                 }
                 I.push_back(i);
