@@ -1,5 +1,5 @@
-#ifndef ORDERRBTREE_CPP
-#define ORDERRBTREE_CPP
+#ifndef ORDER_RB_TREE_CPP
+#define ORDER_RB_TREE_CPP
 // 带序红黑树
 
 #include<ext/pb_ds/assoc_container.hpp>
