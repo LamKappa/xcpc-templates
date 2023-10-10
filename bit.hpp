@@ -2,15 +2,30 @@
 #define BIT_CPP
 // 树状数组
 
+int lowbit(int x){return x&-x;}
+
 template<typename T=int>
 struct BIT{
-    int _log;
+    int n;
     std::vector<T> node;
-    BIT(int N=16):_log(__lg(N-1)+1),node((1ll<<_log)+1,0){}
-    static int lowbit(int x){return x&-x;}
+    BIT(int n=0){init(n);}
+    BIT(const std::vector<T>&initarr){
+        init(initarr);
+    }
+    void init(const std::vector<T>&initarr){
+        init(initarr.size());
+        for(int i=1;i<=n;i++){
+            node[i] += initarr[i-1];
+            if(i+lowbit(i)<=n)node[i+lowbit(i)] += node[i];
+        }
+    }
+    void init(int n){
+        this->n = n;
+        node.assign(n+1,T());
+    }
     void add(int k,T v){
         if(!k)return;
-        for(;k<node.size();k+=lowbit(k))node[k]+=v;
+        for(;k<=n;k+=lowbit(k))node[k]+=v;
     }
     T ask(int k){
         T ret = 0;
@@ -21,19 +36,41 @@ struct BIT{
         if(l>r)std::swap(l,r);
         return ask(r) - ask(l-1);
     }
-    int kth(T k){
-        int pos = 1<<_log;
-        for(int i=pos>>1;pos-i<node.size()&&i;i>>=1)
-            if(node[pos-i]>=k) pos-=i;
-            else k-=node[pos-i];
-        return pos;
+    int kth(T k) {
+        int x = 0;
+        for (int i=1<<std::__lg(n);i;i>>=2) {
+            if (x+i<=n&&k>=node[x+i-1]) {
+                x += i;
+                k -= node[x-1];
+            }
+        }
+        return x;
     }
 };
 
 template<typename T=int>
 struct BIT_range{
+    int n;
     BIT<T> di,dn;
-    BIT_range(int N=16):di(N),dn(N){}
+    BIT_range(int n=0):di(n),dn(n){}
+    BIT_range(const std::vector<T>&initarr){
+        init(initarr);
+    }
+    void init(const std::vector<T>&initarr){
+        init(initarr.size());
+        for(int i=1;i<=n;i++){
+            di.node[i] += i*initarr[i-1];
+            if(i<n)di.node[i+1] -= (i+1)*initarr[i-1];
+            if(i+lowbit(i)<=n)di.node[i+lowbit(i)] += di.node[i];
+            dn.node[i] += initarr[i-1];
+            if(i<n)dn.node[i+1] -= initarr[i-1];
+            if(i+lowbit(i)<=n)dn.node[i+lowbit(i)] += dn.node[i];
+        }
+    }
+    void init(int n){
+        this->n = n;
+        di.init(n);dn.init(n);
+    }
     void add_d(int k,int v){
         di.add(k,k*v);
         dn.add(k,v);
