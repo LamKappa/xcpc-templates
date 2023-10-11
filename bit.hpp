@@ -27,19 +27,20 @@ struct BIT{
         if(!k)return;
         for(;k<=n;k+=lowbit(k))node[k]+=v;
     }
-    T ask(int k){
+    T __ask(int k){
         T ret = 0;
         for(;k>0;k-=lowbit(k))ret+=node[k];
         return ret;
     }
     T ask(int l,int r){
         if(l>r)std::swap(l,r);
-        return ask(r) - ask(l-1);
+        return query(r) - query(l-1);
     }
-    int kth(T k) {
+    T ask(int p){return ask(p,p);}
+    int kth(T k){
         int x = 0;
-        for (int i=1<<std::__lg(n);i;i>>=2) {
-            if (x+i<=n&&k>=node[x+i-1]) {
+        for(int i=1<<std::__lg(n);i;i>>=2){
+            if(x+i<=n&&k>=node[x+i-1]){
                 x += i;
                 k -= node[x-1];
             }
@@ -71,13 +72,13 @@ struct BIT_range{
         this->n = n;
         di.init(n);dn.init(n);
     }
-    void add_d(int k,int v){
+    void __add(int k,int v){
         di.add(k,k*v);
         dn.add(k,v);
     }
     void add(int l,int r,T v){
         if(l>r)std::swap(l,r);
-        add_d(l,v);add_d(r+1,-v);
+        __add(l,v);__add(r+1,-v);
     }
     void add(int k,T v){add(k,k,v);}
     T ask(int k){
