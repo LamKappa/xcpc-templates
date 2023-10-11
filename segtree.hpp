@@ -2,7 +2,7 @@
 #define SEGTREE_H
 // 线段树
 
-struct Tag {
+struct Tag{
     double mul = 1;
     double add = 0;
     
@@ -13,7 +13,7 @@ struct Tag {
     }
 };
 
-struct Info {
+struct Info{
     double sum = 0;
     int cnt = 0;
     
