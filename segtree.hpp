@@ -76,6 +76,11 @@ struct SegTree{
         if(R>mid) __modify(chr, mid, r, L, R, func);
         __pull(rt);
     }
+    void mul(int L, int R, int v){
+        __modify(1, 0, n, L, R+1, [&](int x,int l,int r){
+            __apply(x,Tag{v,0});
+        });
+    }
     void add(int L, int R, int v){
         __modify(1, 0, n, L, R+1, [&](int x,int l,int r){
             __apply(x,Tag{1,v});
