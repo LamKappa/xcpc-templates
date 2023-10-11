@@ -18,7 +18,10 @@ struct Info{
     int cnt = 0;
     
     Info operator+(const Info&o){
-        return {sum+o.sum, cnt+o.cnt};
+        return {
+            sum+o.sum,
+            cnt+o.cnt
+        };
     }
     void operator+=(const Tag&t){
         sum *= t.mul;
@@ -99,8 +102,8 @@ struct SegTree{
     }
 
     static const int npos = -1;
-    template<class Func>
-    int __find(int rt, int l, int r, int L, int R, Func pred, bool forward){
+    template<class Predicator>
+    int __find(int rt, int l, int r, int L, int R, Predicator pred, bool forward){
         if(R<=l || r<=L || !pred(node[rt])) return npos;
         if(l+1==r) return l;
         int chl = 2*rt, chr = chl+1, mid = (l+r)/2;
@@ -110,12 +113,12 @@ struct SegTree{
         }
         return pos;
     }
-    template<class Func>
-    int findFront(int L, int R, Func pred){
+    template<class Predicator>
+    int findFront(int L, int R, Predicator pred){
         return __find(1, 0, n, L, R+1, pred, false);
     }
-    template<class Func>
-    int findBack(int L, int R, Func pred){
+    template<class Predicator>
+    int findBack(int L, int R, Predicator pred){
         return __find(1, 0, n, L, R+1, pred, true);
     }
 };
