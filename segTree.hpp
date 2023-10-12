@@ -60,17 +60,19 @@ struct SegTree{
         delay[rt] += v;
     }
     void __push(int rt){
+        if(2*rt>=node.size())return;
         int chl = 2*rt, chr = chl+1;
         __apply(chl, delay[rt]);
         __apply(chr, delay[rt]);
         delay[rt] = Tag();
     }
     void __pull(int rt){
+        if(2*rt>=node.size())return;
         int chl = 2*rt, chr = chl+1;
         node[rt] = node[chl] + node[chr];
     }
     template<typename Modifier>
-    void __modify(int rt, int l, int r, int L, int R, Modifier func){
+    void __modify(int rt, int l, int r, int L, int R, const Modifier&func){
         if(R<=l || r<=L) return;
         if(L<=l && r<=R) return (void)(func(rt,l,r));
         int chl = 2*rt, chr = chl+1, mid = (l+r)/2;
@@ -103,10 +105,11 @@ struct SegTree{
 
     static const int npos = -1;
     template<class Predicator>
-    int __find(int rt, int l, int r, int L, int R, Predicator pred, bool forward){
+    int __find(int rt, int l, int r, int L, int R, const Predicator&pred, bool forward){
         if(R<=l || r<=L || !pred(node[rt])) return npos;
         if(l+1==r) return l;
         int chl = 2*rt, chr = chl+1, mid = (l+r)/2;
+        __push(rt);
         int pos = __find(chl^forward, l, mid, L, R, pred, forward);
         if(pos == npos){
             pos = __find(chr^forward, mid, r, L, R, pred, forward);
@@ -114,11 +117,11 @@ struct SegTree{
         return pos;
     }
     template<class Predicator>
-    int findFront(int L, int R, Predicator pred){
+    int findFront(int L, int R, const Predicator&pred){
         return __find(1, 0, n, L, R+1, pred, false);
     }
     template<class Predicator>
-    int findBack(int L, int R, Predicator pred){
+    int findBack(int L, int R, const Predicator&pred){
         return __find(1, 0, n, L, R+1, pred, true);
     }
 };
