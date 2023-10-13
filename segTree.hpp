@@ -3,8 +3,8 @@
 // 线段树
 
 struct Tag{
-    double mul = 1;
-    double add = 0;
+    int mul = 1;
+    int add = 0;
     
     void operator+=(const Tag&t){
         mul *= t.mul;
@@ -14,7 +14,7 @@ struct Tag{
 };
 
 struct Info{
-    double sum = 0;
+    int sum = 0;
     int cnt = 0;
     
     Info operator+(const Info&o){
@@ -31,76 +31,87 @@ struct Info{
 
 template<class Info, class Tag>
 struct SegTree{
-    int n;
-    std::vector<Info> node;
-    std::vector<Tag> delay;
+    int n, l_bound, r_bound;
+    struct Node{
+        Info info;
+        Tag tag;
+        int chl=-1, chr=-1;
+    };
+    std::vector<Node> node;
 
     SegTree(){}
-    SegTree(int n):SegTree(){init(n);}
+    SegTree(int n):SegTree(){init(n,0,n);}
+    SegTree(int l_bound, int r_bound):SegTree(){init(r_bound-l_bound,l_bound,r_bound);}
     SegTree(int n, Info v):SegTree(){init(std::vector(n,v));}
     SegTree(const std::vector<Info>&initarr):SegTree(){init(initarr);}
-    void init(int n){
+    void init(int n, int l_bound, int r_bound){
         this->n = n;
-        node.assign(4<<std::__lg(n), Info());
-        delay.assign(4<<std::__lg(n), Tag());
+        this->l_bound = l_bound;
+        this->r_bound = r_bound;
+        node.emplace_back();
     }
     void init(const std::vector<Info>&initarr){
-        init(initarr.size());
+        init(initarr.size(),0,initarr.size());
+        node.reserve(4<<std::__lg(n));
         std::function<void(int,int,int)> build = [&](int rt,int l,int r){
-            if(l+1==r) return (void)(node[rt] = initarr[l]);
-            int chl = 2*rt, chr = chl+1, mid = (l+r)/2;
-            build(chl, l, mid); build(chr, mid, r);
+            if(l+1==r) return (void)(node[rt].info = initarr[l]);
+            int mid = (l+r)/2;
+            __push(rt);
+            build(node[rt].chl, l, mid); build(node[rt].chr, mid, r);
             __pull(rt);
         };
-        build(1, 0, n);
+        build(0, l_bound, r_bound);
     }
 
     void __apply(int rt, const Tag&v){
-        node[rt] += v;
-        delay[rt] += v;
+        node[rt].info += v;
+        node[rt].tag += v;
     }
     void __push(int rt){
-        if(2*rt>=node.size())return;
-        int chl = 2*rt, chr = chl+1;
-        __apply(chl, delay[rt]);
-        __apply(chr, delay[rt]);
-        delay[rt] = Tag();
+        if(node[rt].chl<0) node[rt].chl = node.size(), node.emplace_back();
+        if(node[rt].chr<0) node[rt].chr = node.size(), node.emplace_back();
+        __apply(node[rt].chl, node[rt].tag);
+        __apply(node[rt].chr, node[rt].tag);
+        node[rt].tag = Tag();
     }
     void __pull(int rt){
-        if(2*rt>=node.size())return;
-        int chl = 2*rt, chr = chl+1;
-        node[rt] = node[chl] + node[chr];
+        node[rt].info = node[node[rt].chl].info + node[node[rt].chr].info;
     }
     template<typename Modifier>
     void __modify(int rt, int l, int r, int L, int R, const Modifier&func){
         if(R<=l || r<=L) return;
         if(L<=l && r<=R) return (void)(func(rt,l,r));
-        int chl = 2*rt, chr = chl+1, mid = (l+r)/2;
+        int mid = (l+r)/2;
         __push(rt);
-        if(L<mid) __modify(chl, l, mid, L, R, func);
-        if(R>mid) __modify(chr, mid, r, L, R, func);
+        if(L<mid) __modify(node[rt].chl, l, mid, L, R, func);
+        if(R>mid) __modify(node[rt].chr, mid, r, L, R, func);
         __pull(rt);
     }
+    void assign(int L, int R, const Info&v){
+        __modify(0, l_bound, r_bound, L, R+1, [&](int x,int l,int r){
+            node[x].info = v;
+        });
+    }
     void mul(int L, int R, int v){
-        __modify(1, 0, n, L, R+1, [&](int x,int l,int r){
+        __modify(0, l_bound, r_bound, L, R+1, [&](int x,int l,int r){
             __apply(x,Tag{v,0});
         });
     }
     void add(int L, int R, int v){
-        __modify(1, 0, n, L, R+1, [&](int x,int l,int r){
+        __modify(0, l_bound, r_bound, L, R+1, [&](int x,int l,int r){
             __apply(x,Tag{1,v});
         });
     }
 
     Info __ask(int rt, int l, int r, int L, int R){
         if(R<=l || r<=L) return Info();
-        if(L<=l && r<=R) return node[rt];
-        int chl = 2*rt, chr = chl+1, mid = (l+r)/2;
+        if(L<=l && r<=R) return node[rt].info;
+        int mid = (l+r)/2;
         __push(rt);
-        return __ask(chl, l, mid, L, R) + __ask(chr, mid, r, L, R);
+        return __ask(node[rt].chl, l, mid, L, R) + __ask(node[rt].chr, mid, r, L, R);
     }
     Info ask(int L, int R){
-        return __ask(1, 0, n, L, R+1);
+        return __ask(0, l_bound, r_bound, L, R+1);
     }
 
     static const int npos = -1;
@@ -108,21 +119,21 @@ struct SegTree{
     int __find(int rt, int l, int r, int L, int R, const Predicator&pred, bool forward){
         if(R<=l || r<=L || !pred(node[rt])) return npos;
         if(l+1==r) return l;
-        int chl = 2*rt, chr = chl+1, mid = (l+r)/2;
+        int mid = (l+r)/2;
         __push(rt);
-        int pos = __find(chl^forward, l, mid, L, R, pred, forward);
+        int pos = __find(forward?node[rt].chl:node[rt].chr, l, mid, L, R, pred, forward);
         if(pos == npos){
-            pos = __find(chr^forward, mid, r, L, R, pred, forward);
+            pos = __find(forward?node[rt].chr:node[rt].chl, mid, r, L, R, pred, forward);
         }
         return pos;
     }
     template<class Predicator>
     int findFront(int L, int R, const Predicator&pred){
-        return __find(1, 0, n, L, R+1, pred, false);
+        return __find(0, l_bound, r_bound, L, R+1, pred, true);
     }
     template<class Predicator>
     int findBack(int L, int R, const Predicator&pred){
-        return __find(1, 0, n, L, R+1, pred, true);
+        return __find(0, l_bound, r_bound, L, R+1, pred, false);
     }
 };
 
