@@ -2,8 +2,7 @@
 #define SEGTREE_H
 // 线段树
 // 动态开点
-// 值域+权值
-// 区间delayTag
+// 支持区间delayTag
 
 struct Tag{
     int mul = 1;
@@ -22,8 +21,8 @@ struct Info{
     
     Info operator+(const Info&o){
         return {
-            sum+o.sum,
-            cnt+o.cnt
+            sum + o.sum,
+            cnt + o.cnt
         };
     }
     void operator+=(const Tag&t){
