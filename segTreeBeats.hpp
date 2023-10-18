@@ -43,7 +43,7 @@ struct Info{
 };
 
 template<class Info, class Tag>
-struct SegTree{
+struct SegTreeBeats{
     int l_bound, r_bound;
     struct Node{
         Info info;
@@ -52,11 +52,11 @@ struct SegTree{
     };
     std::vector<Node> node;
 
-    SegTree(){}
-    SegTree(int n):SegTree(){init(0,n);}
-    SegTree(int l_bound, int r_bound):SegTree(){init(l_bound,r_bound);}
-    SegTree(int n, Info v):SegTree(){init(std::vector(n,v));}
-    SegTree(const std::vector<Info>&initarr):SegTree(){init(initarr);}
+    SegTreeBeats(){}
+    SegTreeBeats(int n):SegTreeBeats(){init(0,n);}
+    SegTreeBeats(int l_bound, int r_bound):SegTreeBeats(){init(l_bound,r_bound);}
+    SegTreeBeats(int n, Info v):SegTreeBeats(){init(std::vector(n,v));}
+    SegTreeBeats(const std::vector<Info>&initarr):SegTreeBeats(){init(initarr);}
     void init(int l_bound, int r_bound){
         this->l_bound = l_bound;
         this->r_bound = r_bound;
