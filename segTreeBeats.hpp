@@ -1,38 +1,44 @@
-#ifndef SEGTREE_H
-#define SEGTREE_H
-// 矩阵线段树 动态开点
+#ifndef SEGTREE_BEATS_H
+#define SEGTREE_BEATS_H
+// 吉司机线段树 动态开点
 
-#ifndef MATRIX
-#include "matrix.hpp"
-#endif
+const long long INF = 4e18;
 
 struct Tag{
-    typedef Matrix<2,2> M;
-    M mx;
+    long long addmax = 0, addsec = 0,
+              hisaddmax = 0, hisaddsec = 0;
 
-    Tag(const M&_mx = {{
-            {1, 0},
-            {0, 1}
-        }}) : mx(_mx){}
-    
     void operator+=(const Tag&t){
-        mx = mx * t.mx;
+        hisaddmax = std::max(hisaddmax, addmax + t.hisaddmax);
+        hisaddsec = std::max(hisaddsec, addsec + t.hisaddsec);
+
+        addmax += t.addmax;
+        addsec += t.addsec;
     }
 };
 
 struct Info{
-    typedef Matrix<1,2> M;
-    M mx;
+    long long sum = 0, max = -INF, sec = -INF, maxc = 0, secc = 0, maxhis = -INF;
 
-    Info(const M&_mx = {{
-            {0, 0}
-        }}) : mx(_mx){}
-    
     Info operator+(const Info&o){
-        return mx + o.mx;
+        return {
+            sum + o.sum,
+            std::max(max, o.max),
+            std::max(max == o.max ? -INF : std::min(max, o.max), std::max(sec, o.sec)),
+            max == o.max ? maxc + o.maxc : (max > o.max ? maxc : o.maxc),
+            (max == o.max ? 0 : (max > o.max ? o.maxc : maxc)) + secc + o.secc,
+            std::max(maxhis, o.maxhis)
+        };
     }
     void operator+=(const Tag&t){
-        mx = mx * t.mx;
+        sum += t.addmax * maxc;
+        sum += t.addsec * secc;
+
+        maxhis = std::max(maxhis, max + t.hisaddmax);
+        maxhis = std::max(maxhis, sec + t.hisaddsec);
+        
+        max += t.addmax;
+        sec += t.addsec;
     }
 };
 
@@ -73,9 +79,16 @@ struct SegTree{
         node[rt].tag    += v;
     }
     void __push(int rt){
+        for(auto&ch : node[rt].ch) if(ch<0) ch = node.size(), node.emplace_back();
+        long long maxx = std::max(node[node[rt].ch[0]].info.max,
+                node[node[rt].ch[1]].info.max);
         for(auto&ch : node[rt].ch){
-            if(ch<0) ch = node.size(), node.emplace_back();
-            __apply(ch, node[rt].tag);
+            Tag tag = node[rt].tag;
+            if(maxx > node[ch].info.max){
+                tag.addmax = tag.addsec;
+                tag.hisaddmax = tag.hisaddsec;
+            }
+            __apply(ch, tag);
         }
         node[rt].tag = Tag();
     }
@@ -91,15 +104,32 @@ struct SegTree{
         if(R>(l+r)/2) __modify(node[rt].ch[1], (l+r)/2, r, L, R, func);
         __pull(rt);
     }
-    void assign(int L, int R, const Info&v){
+    void add(int L, int R, long long v){
         __modify(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
-            node[rt].info = v;
+            __apply(rt, Tag{
+                v, v, v, v
+            });
         });
     }
-    void apply(int L, int R, const Tag&t){
-        __modify(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
-            __apply(rt, t);
-        });
+    void min(int L, int R, long long v){
+        std::function<void(int,int,int)> func = [&](int rt,int l,int r){
+            if(node[rt].info.sec >= v){
+                __push(rt);
+                func(node[rt].ch[0], l, (l+r)/2);
+                func(node[rt].ch[1], (l+r)/2, r);
+                __pull(rt);
+            }else if(v < node[rt].info.max){
+                int nv = v - node[rt].info.max;
+                __apply(rt, Tag{
+                    nv, 0, 0, 0
+                });
+            }
+        };
+        __modify(0, l_bound, r_bound, L, R+1, func);
+    }
+    void assign(int L, int R, long long v){
+        add(L, R, INF);
+        min(L, R, v);
     }
 
     template<typename Filter>
@@ -114,29 +144,6 @@ struct SegTree{
         return __ask(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
             return node[rt].info;
         });
-    }
-
-    static const int npos = -1;
-    template<class Predicator>
-    int __find(int rt, int l, int r, int L, int R, const Predicator&pred, bool forward){
-        if(R<=l || r<=L || !pred(node[rt].info)) return npos;
-        if(l+1==r) return l;
-        __push(rt);
-        int chl = node[rt].ch[0], chr = node[rt].ch[1];
-        if(forward) std::swap(chl, chr);
-        int pos = __find(chl, l, (l+r)/2, L, R, pred, forward);
-        if(pos == npos){
-            pos = __find(chr, (l+r)/2, r, L, R, pred, forward);
-        }
-        return pos;
-    }
-    template<class Predicator>
-    int findFront(int L, int R, const Predicator&pred){
-        return __find(0, l_bound, r_bound, L, R+1, pred, true);
-    }
-    template<class Predicator>
-    int findBack(int L, int R, const Predicator&pred){
-        return __find(0, l_bound, r_bound, L, R+1, pred, false);
     }
 };
 
