@@ -2,9 +2,7 @@
 #define ALGORITHM_OPT_SEARCH
 // 优化查找通用算法
 
-#ifndef RANDOM
-#include "random.hpp"
-#endif
+// depends random.hpp
 
 namespace Search{
     constexpr double PI = acosl(-1.);

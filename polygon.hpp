@@ -2,9 +2,7 @@
 #define POLYGON
 // 平面凸包
 
-#ifndef BASIS2D
-#include "basis2D.hpp"
-#endif
+// depends basis2D.hpp
 
 namespace Polygon{
     using namespace Basis2D;

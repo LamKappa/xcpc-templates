@@ -2,9 +2,7 @@
 #define ALGORITHM2D
 // 平面点集算法
 
-#ifndef BASIS2D
-#include "basis2D.hpp"
-#endif
+// depends basis2D.hpp
 
 namespace Algorithm2D{
     using namespace Basis2D;
