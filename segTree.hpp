@@ -71,8 +71,9 @@ struct SegTree{
         node[rt].tag    += v;
     }
     void __push(int rt){
+        if(node[rt].ch[0]<0) node[rt].ch[0] = node.size(), node.emplace_back();
+        if(node[rt].ch[1]<0) node[rt].ch[1] = node.size(), node.emplace_back();
         for(auto&ch : node[rt].ch){
-            if(ch<0) ch = node.size(), node.emplace_back();
             __apply(ch, node[rt].tag);
         }
         node[rt].tag = Tag();
