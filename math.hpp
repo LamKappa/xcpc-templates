@@ -1,5 +1,5 @@
-#ifndef MATH_CPP
-#define MATH_CPP
+#ifndef MATH_H
+#define MATH_H
 // 数学
 
 namespace Math{
