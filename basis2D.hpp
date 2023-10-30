@@ -6,6 +6,9 @@ namespace Basis2D{
     constexpr double PI = acosl(-1.);
     constexpr double INF = 1e20;
     constexpr double EPS = 1e-12;
+    struct Point;
+    using Points = std::vector<Point>;
+    using Line = std::array<Point,2>;
     struct Point{
         double x,y;
         Point(double _x=0, double _y=0):x(_x),y(_y){}
@@ -62,8 +65,27 @@ namespace Basis2D{
                 x*sin(theta) + y*cos(theta)
             };
         }
+        double dist(const Point&o){
+            return ((*this)-o).norm();
+        }
+        double directed_dist(const Line&o){
+            double A = o[0].y - o[1].y;
+            double B = o[1].x - o[0].x;
+            double C = -o[0].x*A + -o[0].y*B;
+            return (A*x + B*y + C) / std::sqrt(A*A + B*B);
+        }
+        double dist(const Line&o){
+            return std::abs(directed_dist(o));
+        }
     };
-    using Points = std::vector<Point>;
+    Point intersection(const Line&a, const Line&b){
+        double S1 = (b[1]-a[0]).cross(a[1]-a[0]);
+        double S2 = (b[0]-a[0]).cross(a[1]-a[0]);
+        return Point{
+            (S1 * b[0].x - S2 * b[1].x) / (S1 - S2),
+            (S1 * b[0].y - S2 * b[1].y) / (S1 - S2)
+        };
+    }
 }
 
 #endif
