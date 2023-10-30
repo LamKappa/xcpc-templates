@@ -31,6 +31,9 @@ namespace Basis2D{
         double operator*(const Point&o)const{
             return dot(o);
         }
+        Point operator*(double r)const{
+            return {r*x, r*y};
+        }
         bool operator==(const Point&o)const{
             return between(o,o);
         }
@@ -52,6 +55,12 @@ namespace Basis2D{
         }
         double theta()const{
             return std::abs(x)+std::abs(y)>EPS?atan2(y,x):-INF;
+        }
+        Point rotate(double theta){
+            return Point{
+                x*cos(theta) - y*sin(theta),
+                x*sin(theta) + y*cos(theta)
+            };
         }
     };
     using Points = std::vector<Point>;
