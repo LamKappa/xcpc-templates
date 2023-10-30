@@ -34,9 +34,9 @@ struct BIT{
     }
     T ask(int l, int r){
         if(l>r)std::swap(l,r);
-        return query(r) - query(l-1);
+        return __ask(r) - __ask(l-1);
     }
-    T ask(int p){return ask(p,p);}
+    T ask(int p){return ask(p, p);}
     int kth(T k){
         int x = 0;
         for(int i=1<<std::__lg(n); i; i>>=2){
@@ -70,7 +70,7 @@ struct BIT_range{
     }
     void init(int n){
         this->n = n;
-        di.init(n); dn.init(n);
+        di.init(n+1); dn.init(n+1);
     }
     void __add(int k, int v){
         di.add(k,k*v);
@@ -81,13 +81,14 @@ struct BIT_range{
         __add(l,v); __add(r+1,-v);
     }
     void add(int k,T v){add(k,k,v);}
-    T ask(int k){
-        return (k+1)*dn.ask(k) - di.ask(k);
+    T __ask(int k){
+        return (k+1)*dn.__ask(k) - di.__ask(k);
     }
     T ask(int l, int r){
         if(l>r) std::swap(l,r);
-        return ask(r) - ask(l-1);
+        return __ask(r) - __ask(l-1);
     }
+    T ask(int p){return ask(p, p);}
 };
 
 #endif
