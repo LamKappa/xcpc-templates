@@ -7,8 +7,9 @@ namespace Basis2D{
     constexpr double INF = 1e20;
     constexpr double EPS = 1e-12;
     struct Point;
-    using Points = std::vector<Point>;
     using Line = std::array<Point,2>;
+    using Points = std::vector<Point>;
+    using Lines = std::vector<Line>;
     struct Point{
         double x,y;
         Point(double _x=0, double _y=0):x(_x),y(_y){}
@@ -49,6 +50,9 @@ namespace Basis2D{
         double cross(const Point&o)const{
             return x*o.y-y*o.x;
         }
+        friend double cross(const Point&a, const Point&b){
+            return a.cross(b);
+        }
         bool between(Point a,Point b)const{
             if(std::abs((a.x-x)*(b.y-y)-(b.x-x)*(a.y-y))>EPS)return false;
             if(a.x>b.x)std::swap(a.x,b.x);
@@ -59,11 +63,17 @@ namespace Basis2D{
         double theta()const{
             return std::abs(x)+std::abs(y)>EPS?atan2(y,x):-INF;
         }
-        Point rotate(double theta){
+        friend double theta(const Point&p){
+            return p.theta();
+        }
+        Point rotate(double theta)const{
             return Point{
                 x*cos(theta) - y*sin(theta),
                 x*sin(theta) + y*cos(theta)
             };
+        }
+        friend Point rotate(const Point&p, double theta){
+            return p.rotate(theta);
         }
         double dist(const Point&o){
             return ((*this)-o).norm();
@@ -78,9 +88,15 @@ namespace Basis2D{
             return std::abs(directed_dist(o));
         }
     };
+    std::ostream& operator<<(std::ostream&out, const Line&l){
+        return out<<l[0]<<"->"<<l[1];
+    }
+    Point lineVec(const Line&l){
+        return Point{l[1] - l[0]};
+    }
     Point intersection(const Line&a, const Line&b){
-        double S1 = (b[1]-a[0]).cross(a[1]-a[0]);
-        double S2 = (b[0]-a[0]).cross(a[1]-a[0]);
+        double S1 = cross(b[1]-a[0], lineVec(a));
+        double S2 = cross(b[0]-a[0], lineVec(a));
         return Point{
             (S1 * b[0].x - S2 * b[1].x) / (S1 - S2),
             (S1 * b[0].y - S2 * b[1].y) / (S1 - S2)
