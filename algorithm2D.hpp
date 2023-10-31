@@ -150,25 +150,25 @@ namespace Algorithm2D{
         Points getIntersection(const LineContainer&_lines){
             Lines lines(_lines.begin(), _lines.end());
             std::sort(lines.begin(), lines.end(), [](auto a,auto b){
-                return theta(lineVec(a)) < theta(lineVec(b));
+                return theta(a) < theta(b);
             });
-            if(lines.empty() || lineVec(lines[0]).norm() < EPS) return {};
+            if(lines.empty() || norm(lines[0]) < EPS) return {};
 
             std::deque<Point> res;
             std::deque<Line> dq;
             for(auto l : lines){
-                while(!res.empty() && cross(lineVec(l), res.back() - l[0]) < -EPS){
+                while(!res.empty() && cross(l, res.back() - l[0]) < -EPS){
                     res.pop_back(); dq.pop_back();
                 }
-                while(!res.empty() && cross(lineVec(l), res.front() - l[0]) < -EPS){
+                while(!res.empty() && cross(l, res.front() - l[0]) < -EPS){
                     res.pop_front(); dq.pop_front();
                 }
                 dq.push_back(l);
                 if(dq.size()>1){
-                    if(std::abs(cross(lineVec(dq.back()), lineVec(dq[dq.size()-2]))) < EPS){
+                    if(std::abs(cross(dq.back(), dq[dq.size()-2])) < EPS){
                         Line bk = dq.back(); dq.pop_back();
-                        if(cross(lineVec(bk), dq.back()[0] - bk[0]) < -EPS){
-                            if(lineVec(bk) * lineVec(dq.back()) < -EPS) return {};
+                        if(cross(bk, dq.back()[0] - bk[0]) < -EPS){
+                            if(dot(bk, dq.back()) < -EPS) return {};
                             dq.back() = l;
                         }
                         if(!res.empty()) res.pop_back();
@@ -176,10 +176,10 @@ namespace Algorithm2D{
                     if(dq.size()>1) res.push_back(intersection(dq.back(), dq[dq.size()-2]));
                 }
             }
-            while(!res.empty() && cross(lineVec(dq.front()), res.back() - dq.front()[0]) < -EPS){
+            while(!res.empty() && cross(dq.front(), res.back() - dq.front()[0]) < -EPS){
                 res.pop_back(); dq.pop_back();
             }
-            assert(cross(lineVec(dq.front()), lineVec(dq.back())) <= EPS);
+            assert(cross(dq.front(), dq.back()) <= EPS);
             if(dq.size()>1) res.push_front(intersection(dq.back(), dq.front()));
 
             return Points(res.begin(), res.end());

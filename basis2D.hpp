@@ -3,16 +3,13 @@
 // 二维点集
 
 namespace Basis2D{
-    constexpr double PI = acosl(-1.);
+    constexpr double PI = acosl(-1.L);
     constexpr double INF = 1e20;
     constexpr double EPS = 1e-12;
-    struct Point;
-    using Line = std::array<Point,2>;
-    using Points = std::vector<Point>;
-    using Lines = std::vector<Line>;
     struct Point{
         double x,y;
         Point(double _x=0, double _y=0):x(_x),y(_y){}
+
         Point& operator=(const Point&o){
             x = o.x; y = o.y;
             return *this;
@@ -20,38 +17,35 @@ namespace Basis2D{
         friend std::ostream& operator<<(std::ostream&out, const Point&p){
             return out<<'('<<p.x<<','<<p.y<<')';
         }
-        bool operator<(const Point&o)const{
-            return std::abs(x-o.x)<EPS?y<o.y:x<o.x;
+        friend bool operator<(const Point& a, const Point&b){
+            return std::abs(a.x-b.x)<EPS?a.y<b.y:a.x<b.x;
         }
-        Point operator+(const Point&o)const{
-            return {x+o.x,y+o.y};
+        friend Point operator+(const Point& a, const Point&b){
+            return {a.x+b.x, a.y+b.y};
         }
-        Point operator-()const{
-            return {-x,-y};
+        friend Point operator-(const Point&p){
+            return {-p.x, -p.y};
         }
-        Point operator-(const Point&o)const{
-            return (*this) + (-o);
+        friend Point operator-(const Point& a, const Point&b){
+            return a + (-b);
         }
-        double operator*(const Point&o)const{
-            return dot(o);
+        friend double operator*(const Point& a, const Point&b){
+            return a.dot(b);
         }
-        Point operator*(double r)const{
-            return {r*x, r*y};
+        friend Point operator*(const Point& p, double r){
+            return {r*p.x, r*p.y};
         }
-        bool operator==(const Point&o)const{
-            return between(o,o);
+        friend bool operator==(const Point& a, const Point&b){
+            return a.between(b,b);
         }
         double norm()const{
             return std::hypotl(x, y);
         }
         double dot(const Point&o)const{
-            return x*o.x+y*o.y;
+            return x*o.x + y*o.y;
         }
         double cross(const Point&o)const{
-            return x*o.y-y*o.x;
-        }
-        friend double cross(const Point&a, const Point&b){
-            return a.cross(b);
+            return x*o.y - y*o.x;
         }
         bool between(Point a,Point b)const{
             if(std::abs((a.x-x)*(b.y-y)-(b.x-x)*(a.y-y))>EPS)return false;
@@ -61,47 +55,76 @@ namespace Basis2D{
                 a.y-EPS<=y&&y<=b.y+EPS;
         }
         double theta()const{
-            return std::abs(x)+std::abs(y)>EPS?atan2(y,x):-INF;
-        }
-        friend double theta(const Point&p){
-            return p.theta();
+            return std::abs(x)+std::abs(y)>EPS?atan2l(y,x):-INF;
         }
         Point rotate(double theta)const{
             return Point{
-                x*cos(theta) - y*sin(theta),
-                x*sin(theta) + y*cos(theta)
+                x*cosl(theta) - y*sinl(theta),
+                x*sinl(theta) + y*cosl(theta)
             };
         }
-        friend Point rotate(const Point&p, double theta){
-            return p.rotate(theta);
+    };
+    using Points = std::vector<Point>;
+
+    double norm(const Point&p){
+        return p.norm();
+    }
+    Point unit(const Point&p){
+        return p * (1.L/p.norm());
+    }
+    double dot(const Point&a, const Point&b){
+        return a.dot(b);
+    }
+    double cross(const Point&a, const Point&b){
+        return a.cross(b);
+    }
+    double theta(const Point&p){
+        return p.theta();
+    }
+    Point rotate(const Point&p, double theta){
+        return p.rotate(theta);
+    }
+    double dist(const Point&a, const Point&b){
+        return (a-b).norm();
+    }
+
+    struct Line : public std::array<Point,2>{
+        using std::array<Point,2>::array;
+        Line(Point a, Point b):array({a,b}){}
+
+        operator Point()const{
+            return (*this)[1] - (*this)[0];
         }
-        double dist(const Point&o){
-            return ((*this)-o).norm();
+        friend std::ostream& operator<<(std::ostream&out, const Line&l){
+            return out<<l[0]<<"->"<<l[1];
         }
-        double directed_dist(const Line&o){
-            double A = o[0].y - o[1].y;
-            double B = o[1].x - o[0].x;
-            double C = -o[0].x*A + -o[0].y*B;
-            return (A*x + B*y + C) / std::sqrt(A*A + B*B);
+        friend Point operator&(const Line&a, const Line&b){
+            return a.intersection(b);
         }
-        double dist(const Line&o){
-            return std::abs(directed_dist(o));
+        Point intersection(const Line&o)const{
+            double S1 = cross(o[1]-(*this)[0], *this);
+            double S2 = cross(o[0]-(*this)[0], *this);
+            return Point{
+                (S1 * o[0].x - S2 * o[1].x) / (S1 - S2),
+                (S1 * o[0].y - S2 * o[1].y) / (S1 - S2)
+            };
         }
     };
-    std::ostream& operator<<(std::ostream&out, const Line&l){
-        return out<<l[0]<<"->"<<l[1];
+    using Lines = std::vector<Line>;
+
+    double dist(const Point&p, const Line&l){
+        double A = l[0].y - l[1].y;
+        double B = l[1].x - l[0].x;
+        double C = -l[0].x*A + -l[0].y*B;
+        return (A*p.x + B*p.y + C) / std::sqrt(A*A + B*B);
     }
-    Point lineVec(const Line&l){
-        return Point{l[1] - l[0]};
+    double dist(const Line&l, const Point&p){
+        return dist(p, l);
     }
     Point intersection(const Line&a, const Line&b){
-        double S1 = cross(b[1]-a[0], lineVec(a));
-        double S2 = cross(b[0]-a[0], lineVec(a));
-        return Point{
-            (S1 * b[0].x - S2 * b[1].x) / (S1 - S2),
-            (S1 * b[0].y - S2 * b[1].y) / (S1 - S2)
-        };
+        return a.intersection(b);
     }
+
 }
 
 #endif
