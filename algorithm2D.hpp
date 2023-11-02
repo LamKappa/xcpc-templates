@@ -179,8 +179,8 @@ namespace Algorithm2D{
             while(!res.empty() && cross(dq.front(), res.back() - dq.front()[0]) < -EPS){
                 res.pop_back(); dq.pop_back();
             }
-            assert(cross(dq.front(), dq.back()) <= EPS);
             if(dq.size()>1) res.push_front(intersection(dq.back(), dq.front()));
+            assert(res.size() >= 3 && cross(dq.front(), dq.back()) <= EPS);
 
             return Points(res.begin(), res.end());
         }

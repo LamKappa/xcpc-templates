@@ -1,5 +1,5 @@
-#ifndef ST_H
-#define ST_H
+#ifndef ST_HPP
+#define ST_HPP
 
 template<class T>
 struct ST{
