@@ -4,8 +4,8 @@
 
 namespace Basis2D{
     constexpr double PI = acosl(-1.L);
-    constexpr double INF = 1e20;
-    constexpr double EPS = 1e-12;
+    constexpr double INF = 1e8;
+    constexpr double EPS = 1e-8;
     struct Point{
         double x,y;
         Point(double _x=0, double _y=0):x(_x),y(_y){}
@@ -63,7 +63,7 @@ namespace Basis2D{
                 x*sinl(theta) + y*cosl(theta)
             };
         }
-    };
+    } noPoint = {NAN, NAN};
     using Points = std::vector<Point>;
 
     double norm(const Point&p){
@@ -87,6 +87,9 @@ namespace Basis2D{
     double dist(const Point&a, const Point&b){
         return (a-b).norm();
     }
+    double tan(const Point&p){
+        return p.y / p.x;
+    }
 
     struct Line : public std::array<Point,2>{
         using std::array<Point,2>::array;
@@ -98,18 +101,20 @@ namespace Basis2D{
         friend std::ostream& operator<<(std::ostream&out, const Line&l){
             return out<<l[0]<<"->"<<l[1];
         }
-        friend Point operator&(const Line&a, const Line&b){
-            return a.intersection(b);
-        }
         Point intersection(const Line&o)const{
             double S1 = cross(o[1]-(*this)[0], *this);
             double S2 = cross(o[0]-(*this)[0], *this);
+            if(std::abs(S1-S2) < EPS) return noPoint;
             return Point{
                 (S1 * o[0].x - S2 * o[1].x) / (S1 - S2),
                 (S1 * o[0].y - S2 * o[1].y) / (S1 - S2)
             };
         }
-    };
+        Point projection(const Point&p)const{
+            const Line&l = *this;
+            return l[0] + (Point)l * (dot(l, p - l[0]) / dot(l, l));
+        }
+    } noLine = {noPoint, noPoint};
     using Lines = std::vector<Line>;
 
     double dist(const Point&p, const Line&l){
@@ -125,6 +130,61 @@ namespace Basis2D{
         return a.intersection(b);
     }
 
+    struct Circle{
+        Point c;
+        double r = 0., &x=c.x, &y=c.y;
+        Circle(Line l={}):c(l[0]),r(norm(l)){}
+        Circle(Point c, double r):c(c),r(r){}
+
+        double area(){
+            return PI*r*r;
+        }
+        friend std::ostream& operator<<(std::ostream&out, const Circle&c){
+            return out<<c.c<<" radius:"<<c.r;
+        }
+        Point inversion(const Point&p)const{
+            return c + unit(p - c) * (r*r / dist(p, c));
+        }
+        Circle inversion(const Line&l)const{
+            Point p = l.projection(c);
+            double d = norm(p-c);
+            double R = r*r / (2*d);
+            Point dv = unit(p-c) * R;
+            return Circle{c + dv, R};
+        }
+        Line intersection(const Circle&o)const{
+            double d = (o.c-c).norm();
+            if(r + o.r < d || std::abs(r - o.r) > d) return noLine;
+            double dt = acosl((r*r + d*d - o.r*o.r) / (2*d*r));
+            return Line{
+                c + rotate(unit(o.c-c)*r, -dt),
+                c + rotate(unit(o.c-c)*r, dt)
+            };
+        }
+        Line intersection(const Line&l)const{
+            double d = dist(l, c);
+            if(r < d) return noLine;
+            return intersection(inversion(l));
+        }
+        Line tangency_line(const Point&p){
+            return intersection(Circle{(p+c)*0.5, norm(p-c)});
+        }
+        std::vector<Line> tangency_line(const Circle&o){
+
+        }
+        std::pair<Line, Circle> inversion(const Circle&);
+    } noCircle = {noPoint, NAN};
+    using Circles = std::vector<Circle>;
+
+    std::pair<Line, Circle> Circle::inversion(const Circle&o){
+        double d = (o.c-c).norm();
+        if(d == o.c){
+            return {intersection(o), noCircle};
+        }else{
+            double nr = ((1./(d-o.r)) - (1./(d+o.r))) * r * r / 2.;
+            return {noLine, {c + unit(o.c-c)*(nr/o.r), nr}};
+        }
+    }
 }
 
 #endif

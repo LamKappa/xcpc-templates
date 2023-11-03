@@ -145,9 +145,12 @@ namespace Algorithm2D{
             return __solve(points).second;
         }
     }
+    namespace MinCoverage{
+
+    }
     namespace HalfPlane{
         template<typename LineContainer>
-        Points getIntersection(const LineContainer&_lines){
+        Points overlap(const LineContainer&_lines){
             Lines lines(_lines.begin(), _lines.end());
             std::sort(lines.begin(), lines.end(), [](auto a,auto b){
                 return theta(a) < theta(b);
