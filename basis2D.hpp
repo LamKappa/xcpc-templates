@@ -132,10 +132,22 @@ namespace Basis2D{
 
     struct Circle{
         Point c;
-        double r = 0., &x=c.x, &y=c.y;
+        double r = 0.;
         Circle(Line l={}):c(l[0]),r(norm(l)){}
         Circle(Point c, double r):c(c),r(r){}
+        Circle(const std::array<Point, 3>&triangle){
+            Point p1 = (triangle[0] + triangle[1]) * 0.5;
+            Point p2 = (triangle[1] + triangle[2]) * 0.5;
+            this->c = Basis2D::intersection(
+                {p1, p1 + rotate(triangle[0] - triangle[1], PI / 2.)},
+                {p2, p2 + rotate(triangle[1] - triangle[2], PI / 2.)}
+            );
+            this->r = dist(this->c, triangle[1]);
+        }
 
+        operator Point()const{
+            return c;
+        }
         double area(){
             return PI*r*r;
         }

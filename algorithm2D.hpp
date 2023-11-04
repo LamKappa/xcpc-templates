@@ -146,7 +146,67 @@ namespace Algorithm2D{
         }
     }
     namespace MinCoverage{
+        template<typename Iterable>
+        Points solve_rectangle(const Iterable&_points){
+            Points poly = Polygon::Chull::solve(_points);
+            if(poly.size()<=2) return poly;
+            int i=0, j=1;
+            int k1=0, k2=0, k3=0;
+            double ans = 1e18;
+            Points ans_p(4);
+            auto update = [&](){
+                double H = poly[k2].dist({poly[i],poly[j]});
+                double W1 = poly[k1].dist({poly[i],poly[i]+(poly[j]-poly[i]).rotate(PI/2)});
+                double W2 = poly[k3].dist({poly[i],poly[i]+(poly[j]-poly[i]).rotate(PI/2)});
+                double S = H*(W1+W2);
+                if(S < ans){
+                    Point D = unit(poly[j] - poly[i]);
+                    ans_p[0] = poly[i]; ans_p[0] = ans_p[0] + D*(-W1);
+                    ans_p[1] = poly[i]; ans_p[1] = ans_p[1] + D*(W2);
+                    D = Point{-D.y, D.x};
+                    ans_p[2] = ans_p[1]; ans_p[2] = ans_p[2] + D*(H);
+                    ans_p[3] = ans_p[0]; ans_p[3] = ans_p[3] + D*(H);
 
+                    ans = S;
+                }
+            };
+            while((poly[j]-poly[i]).cross(poly[k1]-poly[i]) <= (poly[j]-poly[i]).cross(poly[(k1+1)%n]-poly[i])){
+                k1 = (k1+1)%n;
+            }
+            for(; i<n; i++, j=(j+1)%n){
+                while((poly[j]-poly[i]).rotate(PI/2).cross(poly[k1]-poly[i]) <= (poly[j]-poly[i]).rotate(PI/2).cross(poly[(k1+1)%n]-poly[i])){
+                    k1 = (k1+1)%n;
+                }
+                while((poly[j]-poly[i]).cross(poly[k2]-poly[i]) <= (poly[j]-poly[i]).cross(poly[(k2+1)%n]-poly[i])){
+                    k2 = (k2+1)%n;
+                }
+                while((poly[j]-poly[i]).rotate(PI/2).cross(poly[k3]-poly[i]) >= (poly[j]-poly[i]).rotate(PI/2).cross(poly[(k3+1)%n]-poly[i])){
+                    k3 = (k3+1)%n;
+                }
+                update();
+            }
+            return ans_p;
+        }
+        template<typename Iterable>
+        Circle solve_circle(const Iterable&_points){
+            Points points(_points.begin(), _points.end());
+            std::shuffle(points.begin(), points.end(), std::random_device{});
+            Circle c;
+            for(auto i=points.begin(); i!=points.end(); i++){
+                if(dist(c, *i) <= c.r) continue;
+                c = {*i, 0.};
+                for(auto j=points.begin(); j!=i; j++){
+                    if(dist(c, *j) <= c.r) continue;
+                    c.c = (*i + *j) * 0.5;
+                    c.r = dist(c, *j);
+                    for(auto k=points.begin(); k!=j; k++){
+                        if(dist(c, *k) <= c.r) continue;
+                        c = {{*i, *j, *k}};
+                    }
+                }
+            }
+            return c;
+        }
     }
     namespace HalfPlane{
         template<typename LineContainer>
