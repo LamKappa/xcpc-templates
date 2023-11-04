@@ -1,5 +1,5 @@
-#ifndef MATH_H
-#define MATH_H
+#ifndef MATH
+#define MATH
 // 数学
 
 namespace Math{

@@ -1,5 +1,5 @@
-#ifndef SEGTREE_BEATS_H
-#define SEGTREE_BEATS_H
+#ifndef SEGTREE_BEATS
+#define SEGTREE_BEATS
 // 吉司机线段树 动态开点
 
 const long long INF = 4e18;

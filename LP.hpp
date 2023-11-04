@@ -1,5 +1,5 @@
-#ifndef LINEAR_PROGRAMMING_HPP
-#define LINEAR_PROGRAMMING_HPP
+#ifndef LINEAR_PROGRAMMING
+#define LINEAR_PROGRAMMING
 // 线性规划
 
 enum Relation{

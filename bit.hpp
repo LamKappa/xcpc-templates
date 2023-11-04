@@ -1,5 +1,5 @@
-#ifndef BIT_CPP
-#define BIT_CPP
+#ifndef BIT
+#define BIT
 // 树状数组
 
 int lowbit(int x){return x&-x;}

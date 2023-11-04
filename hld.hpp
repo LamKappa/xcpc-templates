@@ -1,5 +1,5 @@
-#ifndef HLD_CPP
-#define HLD_CPP
+#ifndef HLD
+#define HLD
 // 重链剖分
 
 // depends SegTree.hpp

@@ -1,5 +1,5 @@
-#ifndef ST_HPP
-#define ST_HPP
+#ifndef SEPARATE_TABLE
+#define SEPARATE_TABLE
 
 template<class T>
 struct ST{

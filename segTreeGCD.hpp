@@ -1,5 +1,5 @@
-#ifndef SEGTREE_GCD_H
-#define SEGTREE_GCD_H
+#ifndef SEGTREE_GCD
+#define SEGTREE_GCD
 // GCD线段树
 
 template<typename T = long long>

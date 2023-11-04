@@ -1,5 +1,5 @@
-#ifndef SEGTREE_H
-#define SEGTREE_H
+#ifndef SEGTREE
+#define SEGTREE
 // 矩阵线段树 动态开点
 
 // depends matrix.hpp

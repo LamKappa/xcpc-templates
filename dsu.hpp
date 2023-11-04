@@ -1,5 +1,5 @@
-#ifndef DSU_CPP
-#define DSU_CPP
+#ifndef DSU
+#define DSU
 // 并查集
 
 struct DSU{
