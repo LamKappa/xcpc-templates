@@ -124,11 +124,17 @@ struct SegTree{
         if(R<=l || r<=L || !pred(node[rt].info)) return npos;
         if(l+1==r) return l;
         __push(rt);
-        int chl = node[rt].ch[0], chr = node[rt].ch[1];
-        if(forward) std::swap(chl, chr);
-        int pos = __find(chl, l, (l+r)/2, L, R, pred, forward);
-        if(pos == npos){
+        int chl = node[rt].ch[0], chr = node[rt].ch[1], pos = npos;
+        if(forward){
+            pos = __find(chl, l, (l+r)/2, L, R, pred, forward);
+            if(pos == npos){
+                pos = __find(chr, (l+r)/2, r, L, R, pred, forward);
+            }
+        }else{
             pos = __find(chr, (l+r)/2, r, L, R, pred, forward);
+            if(pos == npos){
+                pos = __find(chl, l, (l+r)/2, L, R, pred, forward);
+            }
         }
         return pos;
     }
