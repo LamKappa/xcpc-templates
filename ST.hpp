@@ -1,7 +1,7 @@
 #ifndef SEPARATE_TABLE
 #define SEPARATE_TABLE
 
-template<class T>
+template<typename T>
 struct ST{
     unsigned N, B;
     std::function<T(T,T)> calc;
