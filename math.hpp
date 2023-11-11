@@ -4,12 +4,16 @@
 
 namespace Math{
     using i64 = long long;
+    using i128 = __int128;
     const i64 INF = -1ULL >> 3;
     const long double EPS = 1e-16;
 
     namespace Basic{
         i64 gcd(i64 a, i64 b){
+            i64 neg = ((a < 0) ^ (b < 0)) ? -1 : 1;
+            a = std::abs(a); b = std::abs(b);
             if((a&-a) < (b&-b)) std::swap(a, b);
+            if(b == 0) return a;
             int bz = __builtin_ctzll(b);
             b >>= bz;
             while(a){
@@ -18,7 +22,73 @@ namespace Math{
                 if(a < b) b = a;
                 a = std::abs(tmp);
             }
-            return b << bz;
+            return neg * (b << bz);
+        }
+        i64 qmul(i64 a, i64 b, i64 mod){
+            i64 res = a*b - mod*(i64)(1.L/mod*a*b);
+            return res - mod*(res>=mod) + mod*(res<0);
+        }
+        i64 qpow(i64 a, i64 b, i64 mod){
+            i64 res = 1ll;
+            while(b){
+                if(b & 1) res = qmul(res, a, mod);
+                a = qmul(a, a, mod);
+                b >>= 1;
+            }
+            return res;
+        }
+        bool miller_rabin(i64 x){
+            constexpr std::array<i64, 7> test_p = {2, 325, 9375, 28178, 450775, 9780504, 1795265022};
+            if(x<=3 || x%2 == 0) return x==2 || x==3;
+            if(x%6 != 1 && x%6 != 5) return false;
+            i64 k = x-1;
+            int r = __builtin_ctzll(k), j;
+            k >>= r;
+            for(auto p : test_p){
+                if(p % x == 0) continue;
+                i64 v = qpow(p,k,x);
+                if(v == 1) continue;
+                for(j=1; j<=r; j++, v=qmul(v,v,x)) if(v==x-1) break;
+                if(j > r) return false;
+            }
+            return true;
+        }
+        i64 pollard_rho(i64 num){
+            if(num % 2 == 0) return 2;
+            i64 val = 1ll, s = 0, t = 0;
+            static std::mt19937 eng(std::random_device{}());
+            i64 c = std::uniform_int_distribution<i64>(1ll, num-1)(eng);
+            auto func = [](i64 x,i64 c,i64 mod){
+                return (qmul(x,x,mod) + c) % mod;
+            };
+            for(int goal=1; ; goal<<=1, s=t, val=1ll){
+                for(int steps=1; steps<=goal; ++steps){
+                    t = func(t, c, num);
+                    val = qmul(val, std::abs(t-s), num);
+                    if(steps % 127 == 0){
+                        i64 gcd_ = gcd(val, num);
+                        if(gcd_ > 1) return gcd_;
+                    }
+                }
+                i64 gcd_ = gcd(val, num);
+                if(gcd_ > 1) return gcd_;
+            }
+            assert(false);
+        }
+        i64 max_prime_factor(i64 num){
+            i64 max_factor = -1;
+            auto dfs = [&max_factor](auto dfs, i64 num){
+                if(num <= max_factor || num < 2) return;
+                if(miller_rabin(num)){
+                    return (void)(max_factor = std::max(max_factor, num));
+                }
+                i64 factor_ = pollard_rho(num);
+                while(factor_ >= num) factor_ = pollard_rho(num);
+                while(num % factor_ == 0) num /= factor_;
+                dfs(dfs, num); dfs(dfs, factor_);
+            };
+            dfs(dfs, num);
+            return max_factor;
         }
         std::array<std::pair<i64,i64>, 2> fraction(long double x, i64 M = INF, i64 N = INF){
             i64 m = 1, n = 1, lm=0, ln=1, rm=1, rn=0;
@@ -47,7 +117,6 @@ namespace Math{
         // std::vector<std::array<int,3>> FAC_3;
         // std::vector<std::vector<int>> linear_gcd_lst;
         std::vector<int> minp, phi, primes, mu;
-
 
         void init(int N){
             // FAC_3.resize(N+1);
