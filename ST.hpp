@@ -4,14 +4,16 @@
 template<typename T>
 struct ST{
     unsigned N, B;
+    T IDE;
     std::function<T(T,T)> calc;
     std::vector<std::vector<T>> a, b;
     std::vector<T> pre, suf;
 
     ST(){}
     ST(const std::vector<T>&v, 
-        const std::function<T(T,T)>&calc = [](T x,T y){return std::min(x, y);}){
-        init(v, calc);
+        const std::function<T(T,T)>&calc = [](T x,T y){return std::min(x, y);},
+        const T&IDE = T()){
+        init(v, calc, IDE);
     }
     template<typename ... Args>
     T Calc(const T&x, const T&y, Args ... args){
@@ -19,11 +21,13 @@ struct ST{
     }
     T Calc(const T&x, const T&y){return calc(x, y);}
     void init(const std::vector<T>&v, 
-        const std::function<T(T,T)>&calc = [](T x,T y){return std::min(x, y);}){
+        const std::function<T(T,T)>&calc = [](T x,T y){return std::min(x, y);},
+        const T&IDE = T()){
         this->N = v.size();
         if(N <= 0) return;
         this->B = sqrt(N) + 1;
         this->calc = calc;
+        this->IDE = IDE;
         pre = suf = v;
         const int M = (N + B - 1) / B;
         const int lgM = std::__lg(M);
@@ -53,7 +57,7 @@ struct ST{
         }
         for(int i=1; i<N; i++){
             if(i%B != 0){
-                pre[i] = Calc(pre[i], pre[i-1]);
+                pre[i] = Calc(pre[i-1], pre[i]);
             }
         }
         for(int i=N-2; i>=0; i--){
@@ -61,9 +65,9 @@ struct ST{
                 suf[i] = Calc(suf[i], suf[i+1]);
             }
         }
-    } 
-    T ask(int l, int r){
-        if(l > r) std::swap(l, r);
+    }
+    T ask_O1(int l, int r){
+        if(l > r) return IDE;
         assert(0<=l && r < N);
         if(l/B != r/B){
             T ans = Calc(suf[l], pre[r]);
@@ -74,12 +78,34 @@ struct ST{
                 ans = Calc(ans, a[k][l], a[k][r + 1 - (1<<k)]);
             }
             return ans;
-        } else{
+        }else{
             int k = std::__lg(r-l+1);
             return Calc(b[k][l], b[k][r + 1 - (1<<k)]);
         }
     }
+    T ask(int l, int r){
+        if(l > r) return IDE;
+        assert(0<=l && r < N);
+        T ans = IDE;
+        if(l/B != r/B){
+            ans = suf[l];
+            T ansr = pre[r];
+            l = l/B + 1; r = r/B - 1;
+            while(l <= r){
+                int k = std::__lg(r-l+1);
+                ans = Calc(ans, a[k][l]);
+                l += (1<<k);
+            }
+            ans = Calc(ans, ansr);
+        }else{
+            while(l <= r){
+                int k = std::__lg(r-l+1);
+                ans = Calc(ans, b[k][l]);
+                l += (1<<k);
+            }
+        }
+        return ans;
+    }
 };
-
 
 #endif
