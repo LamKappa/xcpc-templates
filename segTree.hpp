@@ -91,13 +91,13 @@ struct SegTree{
         __pull(rt);
     }
     void assign(int L, int R, const Info&v){
-        if(L > R) std::swap(L, R);
+        if(L > R) return;
         __modify(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
             node[rt].info = v;
         });
     }
     void apply(int L, int R, const Tag&t){
-        if(L > R) std::swap(L, R);
+        if(L > R) return;
         __modify(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
             __apply(rt, t);
         });
@@ -112,7 +112,7 @@ struct SegTree{
             __ask(node[rt].ch[1], (l+r)/2, r, L, R, func);
     }
     Info ask(int L, int R){
-        if(L > R) std::swap(L, R);
+        if(L > R) return Info();
         return __ask(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
             return node[rt].info;
         });

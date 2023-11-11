@@ -61,7 +61,7 @@ struct SegTreeGCD{
         });
     }
     void add(int L, int R, T v){
-        if(L>R) return;
+        if(L > R) return;
         add(L, v); add(R+1, -v);
     }
     template<typename Filter>
@@ -73,7 +73,7 @@ struct SegTreeGCD{
             __ask(node[rt].ch[1],(l+r)/2, r, L, R, func);
     }
     T ask(int L, int R){
-        if(L > R) std::swap(L, R);
+        if(L > R) return 0;
         return __ask(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
             return node[rt].info;
         }).val;

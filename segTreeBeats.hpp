@@ -106,7 +106,7 @@ struct SegTreeBeats{
         __pull(rt);
     }
     void add(int L, int R, long long v){
-        if(L > R) std::swap(L, R);
+        if(L > R) return;
         __modify(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
             __apply(rt, Tag{
                 v, v, v, v
@@ -114,7 +114,7 @@ struct SegTreeBeats{
         });
     }
     void min(int L, int R, long long v){
-        if(L > R) std::swap(L, R);
+        if(L > R) return;
         std::function<void(int,int,int)> func = [&](int rt,int l,int r){
             if(node[rt].info.sec >= v){
                 __push(rt);
@@ -131,7 +131,7 @@ struct SegTreeBeats{
         __modify(0, l_bound, r_bound, L, R+1, func);
     }
     void assign(int L, int R, long long v){
-        if(L > R) std::swap(L, R);
+        if(L > R) return;
         add(L, R, INF);
         min(L, R, v);
     }
@@ -145,7 +145,7 @@ struct SegTreeBeats{
             __ask(node[rt].ch[1], (l+r)/2, r, L, R, func);
     }
     Info ask(int L, int R){
-        if(L > R) std::swap(L, R);
+        if(L > R) return Info();
         return __ask(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
             return node[rt].info;
         });
