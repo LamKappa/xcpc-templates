@@ -87,7 +87,7 @@ namespace Algorithm2D{
                     std::array<std::deque<int>, 2> st;
                     for(int i=l;i<r;i++){
                         auto&dot = points[sorted[i]];
-                        if(abs(dot.x-middot.x)>resv)continue;
+                        if(std::abs(dot.x-middot.x)>resv)continue;
                         bool lr = dot < middot;
                         while(!st[lr].empty()&&points[st[lr].front()].y+resv<dot.y) st[lr].pop_front();
                         for(auto it=st[lr].rbegin();it!=st[lr].rend();it++){
