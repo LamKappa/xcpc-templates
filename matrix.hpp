@@ -12,7 +12,7 @@ struct Matrix{
     const I* operator[](int i) const {
         return val[i];
     }
-    Matrix<N,M,I> operator+(const Matrix<N,M,I>&o){
+    Matrix<N,M,I> operator+(const Matrix<N,M,I>&o)const{
         Matrix<N,M,I> res;
         for(int i=0;i<N;i++){
             for(int j=0;j<M;j++){
@@ -22,7 +22,7 @@ struct Matrix{
         return res;
     }
     template<std::size_t K>
-    Matrix<N,K,I> operator*(const Matrix<M,K,I>&o){
+    Matrix<N,K,I> operator*(const Matrix<M,K,I>&o)const{
         Matrix<N,K,I> res;
         for(int i=0;i<N;i++){
             for(int k=0;k<K;k++){
