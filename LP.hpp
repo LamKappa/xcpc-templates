@@ -33,47 +33,42 @@ struct LP{
     }
 
     void pivot(int x, int j){
-        assert(varmp[x] <= n);
-        double Ajx = A[j][varmp[x]], cx = c[x];
+        double Ajx = A[j][x], cx = c[varmp[x]];
         b[j] /= Ajx;
         c[n + m + 1] += cx * b[j];
-        for(int i=0; i<n+m+1; i++){
-            if(varmp[i] > n) continue;
-            c[i] -= cx * (A[j][varmp[i]] /= Ajx);
+        for(int i=0; i<n+1; i++){
+            c[varmp[i]] -= cx * (A[j][i] /= Ajx);
         }
         c[base[j]] -= cx / Ajx;
-        A[j][varmp[x]] = 1. / Ajx;
-        for(int i=0; i<n+m+1; i++){
-            if(varmp[i] > n || i == x) continue;
-            for(int jj=0; jj<m; jj++){
-                if(jj == j) continue;
-                A[jj][varmp[i]] -= A[jj][varmp[x]] * A[j][varmp[i]];
-            }
-        }
+        A[j][x] = 1. / Ajx;
+
         for(int jj=0; jj<m; jj++){
             if(jj == j) continue;
-            b[jj] -= A[jj][varmp[x]] * b[j];
-            A[jj][varmp[x]] /= -Ajx;
+            double C = A[jj][x];
+            for(int i=0; i<n+1; i++){
+                A[jj][i] -= C * A[j][i];
+            }
+            b[jj] -= C * b[j];
+            A[jj][x] = -C / Ajx;
         }
-        std::swap(varmp[x], varmp[base[j]]);
-        base[j] = x;
+        std::swap(varmp[x], base[j]);
     }
 
     void simplex(){
         for(;;){
             int max_i = -1;
-            for(int i=0; i<n+m+1; i++){
-                if(c[i] <= 0 || varmp[i] > n) continue;
-                if(max_i < 0 || c[max_i] < c[i]){
+            for(int i=0; i<n+1; i++){
+                if(c[varmp[i]] <= 0) continue;
+                if(max_i < 0 || c[varmp[max_i]] < c[varmp[i]]){
                     max_i = i;
                 }
             }
             if(max_i < 0) return;
-            int min_j = -1, varmp_i = varmp[max_i];
+            int min_j = -1;
             for(int j=0; j<m; j++){
-                if(A[j][varmp_i] <= EPS) continue;
+                if(A[j][max_i] <= EPS) continue;
                 if(min_j < 0 ||
-                    b[j]*A[min_j][varmp_i] < b[min_j]*A[j][varmp_i]){
+                    b[j]*A[min_j][max_i] < b[min_j]*A[j][max_i]){
                     min_j = j;
                 }
             }
@@ -84,13 +79,13 @@ struct LP{
 
     void initialize(){
         base.resize(m);
-        varmp.resize(n+m+1);
-        std::iota(varmp.begin(),varmp.begin()+n,0);
-        varmp[n + m] = n;
+        varmp.resize(n+1);
+        std::iota(varmp.begin(),varmp.end(),0);
+        varmp[n] = n + m;
         int min_j = 0;
         for(int j=0; j<m; j++){
             A[j].resize(n+1, 0.);
-            varmp[base[j] = n + j] = n + 1 + j;
+            base[j] = n + j;
 
             if(b[j] < b[min_j]){
                 min_j = j;
@@ -98,7 +93,7 @@ struct LP{
         }
         if(b[min_j] < 0){
             for(int j=0; j<m; j++){
-                A[j][varmp[n + m]] = -1.;
+                A[j][n] = -1.;
             }
             decltype(c) _c; std::swap(_c, c);
             c.assign(n+m+2, 0.); c[n + m] = -1.;
@@ -107,15 +102,14 @@ struct LP{
                 return (void)(exist = false);
             }
             std::swap(c, _c);
-            for(int i=0; i<n+m; i++){
-                if(varmp[i] > n) continue;
+            for(int i=0; i<n; i++){
                 for(int j=0; j<m; j++){
-                    c[i] -= c[base[j]] * A[j][varmp[i]];
+                    c[varmp[i]] -= c[base[j]] * A[j][i];
                 }
             }
             for(int j=0; j<m; j++){
                 c[n + m + 1] += c[base[j]] * b[j];
-                A[j][varmp[n + m]] = c[base[j]] = 0.;
+                A[j][n] = c[base[j]] = 0.;
             }
         }
     }
