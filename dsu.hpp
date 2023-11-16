@@ -23,7 +23,7 @@ struct DSU{
     bool merge(int x, int y){
         x = find(x);y = find(y);
         if(x==y)return false;
-        if(sz[x]<sz[y])swap(x,y);
+        if(sz[x]<sz[y])std::swap(x,y);
         sz[x] += sz[y];
         fa[y] = x;
         return true;
