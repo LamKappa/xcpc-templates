@@ -12,7 +12,7 @@ struct SegTreeGCD{
             };
         }
     };
-    int l_bound, r_bound;
+    int left_margin, right_margin;
     struct Node{
         Info info;
         int ch[2] ={-1, -1};
@@ -21,21 +21,21 @@ struct SegTreeGCD{
 
     SegTreeGCD(){}
     SegTreeGCD(const std::vector<int>&initarr):SegTreeGCD(){init(initarr);}
-    void init(int l_bound, int r_bound){
-        this->l_bound = l_bound;
-        this->r_bound = r_bound;
+    void init(int left_margin, int right_margin){
+        this->left_margin = left_margin;
+        this->right_margin = right_margin;
         node.emplace_back();
     }
     void init(const std::vector<int>&initarr){
         init(0,initarr.size());
-        node.reserve(4<<std::__lg(r_bound - l_bound));
+        node.reserve(4<<std::__lg(right_margin - left_margin));
         std::function<void(int,int,int)> build = [&](int rt,int l,int r){
             if(l+1==r) return(void)(node[rt].info = Info{initarr[l] - (l?initarr[l-1]:0)});
             __push(rt);
             build(node[rt].ch[0], l,(l+r)/2); build(node[rt].ch[1],(l+r)/2, r);
             __pull(rt);
         };
-        build(0, l_bound, r_bound);
+        build(0, left_margin, right_margin);
     }
 
     void __push(int rt){
@@ -55,8 +55,8 @@ struct SegTreeGCD{
         __pull(rt);
     }
     void add(int X, T v){
-        if(X < l_bound || r_bound <= X) return;
-        __modify(0, l_bound, r_bound, X, X+1, [&](int rt,int l,int r){
+        if(X < left_margin || right_margin <= X) return;
+        __modify(0, left_margin, right_margin, X, X+1, [&](int rt,int l,int r){
             node[rt].info.val += v;
         });
     }
@@ -74,7 +74,7 @@ struct SegTreeGCD{
     }
     T ask(int L, int R){
         if(L > R) return 0;
-        return __ask(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
+        return __ask(0, left_margin, right_margin, L, R+1, [&](int rt,int l,int r){
             return node[rt].info;
         }).val;
     }

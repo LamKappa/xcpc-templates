@@ -44,7 +44,7 @@ struct Info{
 
 template<class Info, class Tag>
 struct SegTreeBeats{
-    int l_bound, r_bound;
+    int left_margin, right_margin;
     struct Node{
         Info info;
         Tag tag;
@@ -54,24 +54,24 @@ struct SegTreeBeats{
 
     SegTreeBeats(){}
     SegTreeBeats(int n):SegTreeBeats(){init(0,n);}
-    SegTreeBeats(int l_bound, int r_bound):SegTreeBeats(){init(l_bound,r_bound);}
+    SegTreeBeats(int left_margin, int right_margin):SegTreeBeats(){init(left_margin,right_margin);}
     SegTreeBeats(int n, Info v):SegTreeBeats(){init(std::vector(n,v));}
     SegTreeBeats(const std::vector<Info>&initarr):SegTreeBeats(){init(initarr);}
-    void init(int l_bound, int r_bound){
-        this->l_bound = l_bound;
-        this->r_bound = r_bound;
+    void init(int left_margin, int right_margin){
+        this->left_margin = left_margin;
+        this->right_margin = right_margin;
         node.emplace_back();
     }
     void init(const std::vector<Info>&initarr){
         init(0,initarr.size());
-        node.reserve(4<<std::__lg(r_bound - l_bound));
+        node.reserve(4<<std::__lg(right_margin - left_margin));
         std::function<void(int,int,int)> build = [&](int rt,int l,int r){
             if(l+1==r) return (void)(node[rt].info = initarr[l]);
             __push(rt);
             build(node[rt].ch[0], l, (l+r)/2); build(node[rt].ch[1], (l+r)/2, r);
             __pull(rt);
         };
-        build(0, l_bound, r_bound);
+        build(0, left_margin, right_margin);
     }
 
     void __apply(int rt, const Tag&v){
@@ -107,7 +107,7 @@ struct SegTreeBeats{
     }
     void add(int L, int R, long long v){
         if(L > R) return;
-        __modify(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
+        __modify(0, left_margin, right_margin, L, R+1, [&](int rt,int l,int r){
             __apply(rt, Tag{
                 v, v, v, v
             });
@@ -128,7 +128,7 @@ struct SegTreeBeats{
                 });
             }
         };
-        __modify(0, l_bound, r_bound, L, R+1, func);
+        __modify(0, left_margin, right_margin, L, R+1, func);
     }
     void assign(int L, int R, long long v){
         if(L > R) return;
@@ -146,7 +146,7 @@ struct SegTreeBeats{
     }
     Info ask(int L, int R){
         if(L > R) return Info();
-        return __ask(0, l_bound, r_bound, L, R+1, [&](int rt,int l,int r){
+        return __ask(0, left_margin, right_margin, L, R+1, [&](int rt,int l,int r){
             return node[rt].info;
         });
     }
