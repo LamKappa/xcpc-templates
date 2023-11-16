@@ -1,5 +1,5 @@
-#ifndef DSU
-#define DSU
+#ifndef DISJOINT_SET_UNION
+#define DISJOINT_SET_UNION
 // 并查集
 
 struct DSU{

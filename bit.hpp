@@ -1,5 +1,5 @@
-#ifndef BIT
-#define BIT
+#ifndef FENWICK_TREE
+#define FENWICK_TREE
 // 树状数组
 
 int lowbit(int x){return x&-x;}
