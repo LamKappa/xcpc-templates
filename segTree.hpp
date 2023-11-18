@@ -122,17 +122,23 @@ struct SegTree{
             node[rt].info = v;
         });
     }
-    void append(int L, int R, const Info&v){
-        if(L > R) return;
-        __modify(root, left_margin, right_margin, L, R+1, [&](int rt,int l,int r){
-            node[rt].info += v;
-        });
-    }
+    void assign(int X, const Info&v){assign(X,X,v);}
     void apply(int L, int R, const Tag&t){
         if(L > R) return;
         __modify(root, left_margin, right_margin, L, R+1, [&](int rt,int l,int r){
             __apply(rt, t);
         });
+    }
+    void apply(int X, const Tag&t){apply(X,X,t);}
+
+    Info&operator[](int X){
+        int l = left_margin, r = right_margin, rt = root;
+        while(l+1<r){
+            int mid = (l+r)/2;
+            if(X < mid) r = mid, rt = __reserve(node[rt].ch[0]);
+            else l = mid, rt = __reserve(node[rt].ch[1]);
+        }
+        return node[rt].info;
     }
 
     template<typename Filter>
@@ -179,21 +185,24 @@ struct SegTree{
         return __find(root, left_margin, right_margin, L, R+1, pred, false);
     }
     
-    static int __merge(int rt1, int rt2, int l, int r){
+    template<typename Predicator>
+    static int __merge(int rt1, int rt2, int l, int r, const Predicator&pred){
         if(rt1 == -1) return rt2;
         if(rt2 == -1) return rt1;
         if(l+1==r){
-            node[rt1].info += node[rt2].info;
+            node[rt1].info = pred(node[rt1].info, node[rt2].info);
             return rt1;
         }
         __push(rt1); __push(rt2);
-        node[rt1].ch[0] = __merge(node[rt1].ch[0], node[rt2].ch[0], l, (l+r)/2);
-        node[rt1].ch[1] = __merge(node[rt1].ch[1], node[rt2].ch[1], (l+r)/2, r);
-        __pull(rt1); __drop(rt2);
+        node[rt1].ch[0] = __merge(node[rt1].ch[0], node[rt2].ch[0], l, (l+r)/2, pred);
+        node[rt1].ch[1] = __merge(node[rt1].ch[1], node[rt2].ch[1], (l+r)/2, r, pred);
+        __pull(rt1);
+        // __drop(rt2);
         return rt1;
     }
-    void operator+=(const SegTree&o){
-        __merge(root, o.root, left_margin, right_margin);
+    template<typename Predicator>
+    void merge(const SegTree&o, const Predicator&pred = std::plus<Info>()){
+        __merge(root, o.root, left_margin, right_margin, pred);
     }
 };
 
