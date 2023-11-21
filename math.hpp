@@ -113,13 +113,9 @@ namespace Math{
     }
 
     namespace Sieve{
-        // for: linear_gcd
-        // std::vector<std::array<int,3>> FAC_3;
-        // std::vector<std::vector<int>> linear_gcd_lst;
-        std::vector<int> minp, phi, primes, mu;
+        std::vector<int> minp, primes, phi, mu;
 
         void init(int N){
-            // FAC_3.resize(N+1);
             minp.assign(N+1, 0);
             phi.assign(N+1, 0);
             mu.assign(N+1, 0); mu[1] = 1;
@@ -127,7 +123,6 @@ namespace Math{
             
             for(int n=2;n<=N;n++){
                 if(0==minp[n]){
-                    // FAC_3[n]= {1, 1, n};
                     minp[n] = n;
                     phi[n]  = n-1;
                     mu[n]   = -1;
@@ -135,8 +130,6 @@ namespace Math{
                 }
                 for(int p : primes){
                     if(n * p > N) break;
-                    // FAC_3[n * p] = FAC_3[n]; FAC_3[n * p][0] *= p;
-                    // std::sort(FAC_3[n * p].begin(), FAC_3[n * p].end());
                     minp[n * p] = p;
                     if(p==minp[n]){
                         phi[n * p]  = phi[n] * p;
@@ -147,31 +140,53 @@ namespace Math{
                     mu[n * p]   = mu[n] * mu[p];
                 }
             }
-            // int sqN = std::sqrt(N);
-            // linear_gcd_lst.resize(sqN+1);
-            // for(int i=1; i<=sqN; i++){
-            //     linear_gcd_lst[i].resize(i+1);
-            //     linear_gcd_lst[i][0] = i;
-            //     for(int j=1; j<=i; j++){
-            //         linear_gcd_lst[i][j] = linear_gcd_lst[j][i % j];
-            //     }
-            // }
         }
 
-        // int linear_gcd(int a, int b){
-        //     if(a > b) std::swap(a, b);
-        //     if(a <= 1) return a ? 1 : b;
-        //     int res = 1;
-        //     for(auto k : FAC_3[a]){
-        //         int tmp = 1;
-        //         if(k > linear_gcd_lst.size()){
-        //             if(b % k == 0) tmp = k;
-        //         }else tmp = linear_gcd_lst[k][b % k];
-        //         b /= tmp;
-        //         res *= tmp;
-        //     }
-        //     return res;
-        // }
+        std::vector<std::array<int,3>> FAC_3;
+        std::vector<std::vector<int>> linear_gcd_lst;
+        void linear_gcd_init(int N){
+            FAC_3.resize(N+1);
+            minp.assign(N+1, 0);
+            primes.clear();
+            
+            for(int n=2;n<=N;n++){
+                if(0==minp[n]){
+                    FAC_3[n]= {1, 1, n};
+                    minp[n] = n;
+                    primes.push_back(n);
+                }
+                for(int p : primes){
+                    if(n * p > N) break;
+                    FAC_3[n * p] = FAC_3[n]; FAC_3[n * p][0] *= p;
+                    std::sort(FAC_3[n * p].begin(), FAC_3[n * p].end());
+                    minp[n * p] = p;
+                    if(p==minp[n]) break;
+                }
+            }
+            int sqN = std::sqrt(N);
+            linear_gcd_lst.resize(sqN+1);
+            for(int i=1; i<=sqN; i++){
+                linear_gcd_lst[i].resize(i+1);
+                linear_gcd_lst[i][0] = i;
+                for(int j=1; j<=i; j++){
+                    linear_gcd_lst[i][j] = linear_gcd_lst[j][i % j];
+                }
+            }
+        }
+        int linear_gcd(int a, int b){
+            if(a > b) std::swap(a, b);
+            if(a <= 1) return a ? 1 : b;
+            int res = 1;
+            for(auto k : FAC_3[a]){
+                int tmp = 1;
+                if(k > linear_gcd_lst.size()){
+                    if(b % k == 0) tmp = k;
+                }else tmp = linear_gcd_lst[k][b % k];
+                b /= tmp;
+                res *= tmp;
+            }
+            return res;
+        }
     }
 
 }
