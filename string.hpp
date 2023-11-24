@@ -60,13 +60,14 @@ namespace String{
             return norms;
         }();
 
+        int n;
         std::vector<Hash> h;
         StringHash(){}
         StringHash(const std::string&s){
             init(s);
         }
         void init(const std::string&s){
-            int n = s.size();
+            this->n = s.size();
             h.assign(n+1,{});
             for(int mi=0; mi<C; mi++){
                 auto M = Ms[mi];
