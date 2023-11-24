@@ -243,7 +243,7 @@ namespace Algorithm2D{
                 res.pop_back(); dq.pop_back();
             }
             if(dq.size()>1) res.push_front(intersection(dq.back(), dq.front()));
-            assert(res.size() >= 3 && cross(dq.front(), dq.back()) <= EPS);
+            assert(res.size() >= 3 && cross(dq.front(), dq.back()) <= 0);
 
             return Points(res.begin(), res.end());
         }

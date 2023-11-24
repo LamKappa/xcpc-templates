@@ -3,9 +3,13 @@
 // 二维点集
 
 namespace Basis2D{
-    constexpr double PI = acosl(-1.L);
-    constexpr double INF = 1e8;
-    constexpr double EPS = 1e-8;
+    using f80 = long double;
+    constexpr f80 PI = acosl(-1.L);
+    constexpr f80 INF = 1e8;
+    constexpr f80 EPS = 1e-8;
+    int sign(f80 x){
+        return std::abs(x) <= EPS ? 0 : (x > 0 ? 1 : -1);
+    }
     struct Point{
         double x,y;
         Point(double _x=0, double _y=0):x(_x),y(_y){}
@@ -48,11 +52,8 @@ namespace Basis2D{
             return x*o.y - y*o.x;
         }
         bool between(Point a,Point b)const{
-            if(std::abs((a.x-x)*(b.y-y)-(b.x-x)*(a.y-y))>EPS)return false;
-            if(a.x>b.x)std::swap(a.x,b.x);
-            if(a.y>b.y)std::swap(a.y,b.y);
-            return a.x-EPS<=x&&x<=b.x+EPS &&
-                a.y-EPS<=y&&y<=b.y+EPS;
+            const Point&p = *this;
+            return sign((p-a).dot(p-b)) <= 0 && sign((p-b).cross(a-b)) == 0;
         }
         double theta()const{
             return std::abs(x)+std::abs(y)>EPS?atan2l(y,x):-INF;
@@ -98,6 +99,9 @@ namespace Basis2D{
         operator Point()const{
             return (*this)[1] - (*this)[0];
         }
+        int onleft(const Point&p)const{
+            return sign(cross(*this, p - (*this)[0]));
+        }
         friend std::ostream& operator<<(std::ostream&out, const Line&l){
             return out<<l[0]<<"->"<<l[1];
         }
@@ -109,6 +113,39 @@ namespace Basis2D{
                 (S1 * o[0].x - S2 * o[1].x) / (S1 - S2),
                 (S1 * o[0].y - S2 * o[1].y) / (S1 - S2)
             };
+        }
+        bool parallel(const Line&o)const{
+            return sign(cross(*this, o)) == 0;
+        }
+        bool co_line(const Line&o)const{
+            if(!parallel(o)) return false;
+            auto&l = *this;
+            return l[0].between(o[0], o[1]) || l[1].between(o[0], o[1]) ||
+                o[0].between(l[0], l[1]) || o[1].between(l[0], l[1]);
+        }
+        bool intersection_ray(const Line&o)const{
+            if(parallel(o)) return co_line(o);
+            const auto&l = *this;
+            int sgn = sign(cross(l, o));
+            return sign(o.onleft(l[0])) == sgn && sign(l.onleft(o[0])) == -sgn;
+        }
+        bool intersection_strict(const Line&o)const{
+            if(parallel(o)) return co_line(o);
+            const auto&l = *this;
+            if(l.onleft(o[0])*l.onleft(o[1]) > 0 ||
+                o.onleft(l[0])*o.onleft(l[1]) > 0) {
+                return false;
+            }
+            return true;
+        }
+        bool intersection_nostrict(const Line&o)const{
+            if(parallel(o)) return co_line(o);
+            const auto&l = *this;
+            if(l.onleft(o[0])*l.onleft(o[1]) >= 0 ||
+                o.onleft(l[0])*o.onleft(l[1]) >= 0) {
+                return false;
+            }
+            return true;
         }
         Point projection(const Point&p)const{
             const Line&l = *this;
