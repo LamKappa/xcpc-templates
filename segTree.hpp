@@ -62,14 +62,14 @@ struct SegTree{
     void init(const std::vector<Info>&initarr){
         init(0,initarr.size());
         node.reserve(4<<std::__lg(right_margin - left_margin));
-        std::function<void(int,int,int)> build = [&](int rt,int l,int r){
+        auto build = [&](auto&&build,int rt,int l,int r)->void{
             if(l+1==r) return (void)(node[rt].info = initarr[l]);
             __push(rt);
-            build(__reserve(node[rt].ch[0]), l, (l+r)/2);
-            build(__reserve(node[rt].ch[1]), (l+r)/2, r);
+            build(build, __reserve(node[rt].ch[0]), l, (l+r)/2);
+            build(build, __reserve(node[rt].ch[1]), (l+r)/2, r);
             __pull(rt);
         };
-        build(root, left_margin, right_margin);
+        build(build, root, left_margin, right_margin);
     }
 
     static void __drop(int x){
