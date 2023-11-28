@@ -27,16 +27,15 @@ struct BIT{
         if(!k)return;
         for(;k<=n;k+=lowbit(k))node[k]+=v;
     }
-    T __ask(int k){
+    T ask(int k){
         T ret = 0;
         for(;k>0;k-=lowbit(k))ret+=node[k];
         return ret;
     }
     T ask(int l, int r){
         if(l>r)std::swap(l,r);
-        return __ask(r) - __ask(l-1);
+        return ask(r) - ask(l-1);
     }
-    T ask(int p){return ask(p, p);}
     int kth(T k){
         int x = 0;
         for(int i=1<<std::__lg(n); i; i>>=2){
@@ -88,7 +87,6 @@ struct BIT_range{
         if(l>r) std::swap(l,r);
         return __ask(r) - __ask(l-1);
     }
-    T ask(int p){return ask(p, p);}
 };
 
 #endif
