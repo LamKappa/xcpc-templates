@@ -4,16 +4,15 @@
 template<typename T>
 struct ST{
     unsigned N, B;
-    T IDE;
+    T IE;
     std::function<T(T,T)> calc;
     std::vector<std::vector<T>> a, b;
     std::vector<T> pre, suf;
 
     ST(){}
-    ST(const std::vector<T>&v, 
-        const std::function<T(T,T)>&calc = [](T x,T y){return std::min(x, y);},
-        const T&IDE = T()){
-        init(v, calc, IDE);
+    template<typename ... Args>
+    ST(Args ... args){
+        init(args ...);
     }
     template<typename ... Args>
     T Calc(const T&x, const T&y, Args ... args){
@@ -21,13 +20,13 @@ struct ST{
     }
     T Calc(const T&x, const T&y){return calc(x, y);}
     void init(const std::vector<T>&v, 
-        const std::function<T(T,T)>&calc = [](T x,T y){return std::min(x, y);},
-        const T&IDE = T()){
+        const std::function<T(T,T)>&calc = [](T x,T y){return std::max(x, y);},
+        const T&IE = T()){
         this->N = v.size();
         if(N <= 0) return;
         this->B = sqrt(N) + 1;
         this->calc = calc;
-        this->IDE = IDE;
+        this->IE = IE;
         pre = suf = v;
         const int M = (N + B - 1) / B;
         const int lgM = std::__lg(M);
@@ -67,7 +66,7 @@ struct ST{
         }
     }
     T ask_O1(int l, int r){
-        if(l > r) return IDE;
+        if(l > r) return IE;
         assert(0<=l && r < N);
         if(l/B != r/B){
             T ans = Calc(suf[l], pre[r]);
@@ -84,9 +83,9 @@ struct ST{
         }
     }
     T ask(int l, int r){
-        if(l > r) return IDE;
+        if(l > r) return IE;
         assert(0<=l && r < N);
-        T ans = IDE;
+        T ans = IE;
         if(l/B != r/B){
             ans = suf[l];
             T ansr = pre[r];

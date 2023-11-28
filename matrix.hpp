@@ -6,6 +6,8 @@ template<std::size_t N, std::size_t M, typename I=long long>
 struct Matrix{
     I val[N][M];
 
+    static Matrix IE;
+
     I* operator[](int i){
         return val[i];
     }
@@ -26,7 +28,7 @@ struct Matrix{
         Matrix<N,K,I> res;
         for(int i=0;i<N;i++){
             for(int k=0;k<K;k++){
-                res[i][k] = 0;
+                res[i][k] = I();
                 for(int j=0;j<M;j++){
                     res[i][k] += val[i][j] * o[j][k];
                 }
@@ -43,5 +45,16 @@ struct Matrix{
         return out;
     }
 };
+
+template<std::size_t N, std::size_t M, typename I>
+Matrix<N,M,I> Matrix<N,M,I>::IE = [](){
+    Matrix<N,M,I> IE;
+    for(int i=0;i<N;i++){
+        for(int j=0;j<M;j++){
+            IE[i][j] = i==j ? I(1) : I(0);
+        }
+    }
+    return IE;
+}();
 
 #endif
