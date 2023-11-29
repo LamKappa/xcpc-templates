@@ -9,7 +9,7 @@ enum Relation{
 };
 
 struct LP{
-    constexpr static double EPS = 1e-12;
+    constexpr static double EPS = 1e-5;
     std::size_t n = 0, m = 0;
     std::vector<int> base, varmp;
     std::vector<double> b, c;
@@ -44,29 +44,28 @@ struct LP{
 
         for(int jj=0; jj<m; jj++){
             if(jj == j) continue;
-            double C = A[jj][x];
+            if(std::abs(A[jj][x]) < EPS) continue;
             for(int i=0; i<n+1; i++){
-                A[jj][i] -= C * A[j][i];
+                if(i!=x) A[jj][i] -= A[jj][x] * A[j][i];
             }
-            b[jj] -= C * b[j];
-            A[jj][x] = -C / Ajx;
+            b[jj] -= A[jj][x] * b[j];
+            A[jj][x] /= -Ajx;
         }
         std::swap(varmp[x], base[j]);
     }
 
     void simplex(){
         for(;;){
-            int max_i = -1;
+            int max_i = -1, min_j = -1;;
             for(int i=0; i<n+1; i++){
-                if(c[varmp[i]] <= 0) continue;
+                if(c[varmp[i]] < EPS) continue;
                 if(max_i < 0 || c[varmp[max_i]] < c[varmp[i]]){
                     max_i = i;
                 }
             }
             if(max_i < 0) return;
-            int min_j = -1;
             for(int j=0; j<m; j++){
-                if(A[j][max_i] <= EPS) continue;
+                if(A[j][max_i] < EPS) continue;
                 if(min_j < 0 ||
                     b[j]*A[min_j][max_i] < b[min_j]*A[j][max_i]){
                     min_j = j;
@@ -97,41 +96,48 @@ struct LP{
             }
             decltype(c) _c; std::swap(_c, c);
             c.assign(n+m+2, 0.); c[n + m] = -1.;
-            pivot(n + m, min_j); simplex(); 
+            pivot(n, min_j); simplex();
             if(std::abs(c[n + m] + 1) > EPS){
                 return (void)(exist = false);
             }
             std::swap(c, _c);
-            for(int i=0; i<n; i++){
-                for(int j=0; j<m; j++){
+            for(int j=0; j<m; j++){
+                for(int i=0; i<n+1; i++){
+                    if(varmp[i] == n + m){
+                        A[j][i] = 0.;
+                    }
                     c[varmp[i]] -= c[base[j]] * A[j][i];
                 }
-            }
-            for(int j=0; j<m; j++){
                 c[n + m + 1] += c[base[j]] * b[j];
-                A[j][n] = c[base[j]] = 0.;
+                c[base[j]] = 0.;
+            }
+            for(int j=0, i; j<m; j++){
+                if(base[j] != n + m) continue;
+                for(i=0; i<n+1 && std::abs(A[j][i])<EPS; i++);
+                pivot(i, j);
+                for(i=0; i<n+1 && varmp[i] != n+m; i++);
+                A[j][i] = 0.;
+                break;
             }
         }
     }
 
     double maximize(std::vector<double> _c){
+        exist = true;
         c = _c; c.resize(n+m+2, 0.);
         c[n + m + 1] = c[n]; c[n] = 0.;
         initialize();
         if(!exist) return NAN;
         simplex();
         if(!exist) return 1. / 0.;
-        double res = c[n + m + 1];
-        for(int j=0; j<m; j++){
-            res += b[j] * c[base[j]];
-        }
-        return res;
+        return c[n + m + 1];
     }
     
     double minimize(std::vector<double> _c){
-        c = _c; for(auto&x : c) x = -x;
-        return -maximize(c);
+        for(auto&x : _c) x = -x;
+        return -maximize(_c);
     }
+
 };
 
 #endif
