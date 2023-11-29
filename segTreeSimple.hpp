@@ -33,10 +33,11 @@ struct SegTree{
     std::vector<Info> node;
     std::vector<Tag> delay;
 #define mid ((l+r)/2)
-    SegTree(const std::vector<Info>&initarr){
-        n = initarr.size();
+    SegTree(int n):n(n){
         node.assign(4<<std::__lg(n), Info());
         delay.assign(4<<std::__lg(n), Tag());
+    }
+    SegTree(const std::vector<Info>&initarr):SegTree(initarr.size()){
         auto build = [&](auto&&build,int rt,int l,int r)->void{
             if(l+1==r) return (void)(node[rt] = initarr[l]);
             build(build, rt<<1, l, mid); build(build, rt<<1|1, mid, r);
