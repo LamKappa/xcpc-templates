@@ -29,13 +29,13 @@ struct Info {
 };
 
 struct SegTree{
-    int n;
+    int N;
     std::vector<Info> node;
     std::vector<Tag> delay;
 #define mid ((l+r)/2)
-    SegTree(int n):n(n){
-        node.assign(4<<std::__lg(n), Info());
-        delay.assign(4<<std::__lg(n), Tag());
+    SegTree(int n):N(2<<std::__lg(n)){
+        node.assign(N<<1, Info());
+        delay.assign(N<<1, Tag());
     }
     SegTree(const std::vector<Info>&initarr):SegTree(initarr.size()){
         auto build = [&](auto&&build,int rt,int l,int r)->void{
@@ -43,7 +43,7 @@ struct SegTree{
             build(build, rt<<1, l, mid); build(build, rt<<1|1, mid, r);
             pull(rt);
         };
-        build(build, 1, 0, n);
+        build(build, 1, 0, N);
     }
 
     void push(int rt){
@@ -70,7 +70,11 @@ struct SegTree{
     }
     void apply(int L, int R, const Tag&t){
         if(L > R) return;
-        apply(1, 0, n, L, R+1, t);
+        apply(1, 0, N, L, R+1, t);
+    }
+    void assign(int rt, const Info&v){
+        node[rt += N] = v;
+        while(rt>>=1) pull(rt);
     }
 
     Info ask(int rt, int l, int r, int L, int R){
@@ -82,7 +86,10 @@ struct SegTree{
     }
     Info ask(int L, int R){
         if(L > R) return Info();
-        return ask(1, 0, n, L, R+1);
+        return ask(1, 0, N, L, R+1);
+    }
+    Info operator[](int x){
+        return node[x + N];
     }
 #undef mid
 };
