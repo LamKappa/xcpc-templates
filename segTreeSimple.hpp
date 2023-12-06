@@ -33,6 +33,7 @@ struct SegTree{
     std::vector<Info> node;
     std::vector<Tag> delay;
 #define mid ((l+r)/2)
+    SegTree() = default;
     SegTree(int n):N(2<<std::__lg(n)){
         node.assign(N<<1, Info());
         delay.assign(N<<1, Tag());
