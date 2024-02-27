@@ -6,7 +6,7 @@ using i128 = __int128;
 using f80 = long double;
 const i64 INF = -1ULL >> 15;
 
-ostream& operator<<(ostream&out, i128 x){
+std::ostream& operator<<(std::ostream&out, i128 x){
     static int st[33];
     int top = 0;
     do{st[top++] = x%10;}while(x/=10);

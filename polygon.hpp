@@ -14,8 +14,14 @@ namespace Polygon{
             Point c = *std::min_element(points.begin(), points.end());
             std::sort(points.begin(), points.end(), [&c](auto a,auto b){
                 auto ac = a - c, bc = b - c;
-                double delta = ac.theta() - bc.theta();
-                return std::abs(delta)>EPS?delta<0:ac.norm()<bc.norm();
+                auto cr = cross(ac, bc);
+                if(cr == 0 && dot(ac, bc) >= 0){
+                    return ac.norm() < bc.norm();
+                }else{
+                    auto xa = ac.y > 0 || (ac.y == 0 && ac.x < 0),
+                        xb = bc.y > 0 || (bc.y == 0 && bc.x < 0);
+                    return xa == xb ? cr > 0 : xa < xb;
+                }
             });
             __Chull H;
             for(int i=0;i<points.size();i++){

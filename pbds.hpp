@@ -1,6 +1,8 @@
 #ifndef STL_PBDS
 #define STL_PBDS
 
+#define _EXT_CODECVT_SPECIALIZATIONS_H 1
+#define _EXT_ENC_FILEBUF_H 1
 #include <bits/extc++.h>
 // using namespace __gnu_cxx;
 // using namespace __gnu_pbds;

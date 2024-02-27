@@ -3,42 +3,42 @@
 // 矩阵
 
 template<std::size_t N, std::size_t M, typename I=long long>
-struct Matrix{
+struct Matrix {
     I val[N][M];
-
+    
     static Matrix IE;
-
-    I* operator[](int i){
+    
+    I* operator[](int i) {
         return val[i];
     }
     const I* operator[](int i) const {
         return val[i];
     }
-    Matrix<N,M,I> operator+(const Matrix<N,M,I>&o)const{
+    Matrix<N,M,I> operator+(const Matrix<N,M,I>&o)const {
         Matrix<N,M,I> res;
-        for(int i=0;i<N;i++){
-            for(int j=0;j<M;j++){
+        for(int i=0; i<N; i++) {
+            for(int j=0; j<M; j++) {
                 res[i][j] = val[i][j] + o[i][j];
             }
         }
         return res;
     }
     template<std::size_t K>
-    Matrix<N,K,I> operator*(const Matrix<M,K,I>&o)const{
+    Matrix<N,K,I> operator*(const Matrix<M,K,I>&o)const {
         Matrix<N,K,I> res;
-        for(int i=0;i<N;i++){
-            for(int k=0;k<K;k++){
+        for(int i=0; i<N; i++) {
+            for(int k=0; k<K; k++) {
                 res[i][k] = I();
-                for(int j=0;j<M;j++){
+                for(int j=0; j<M; j++) {
                     res[i][k] += val[i][j] * o[j][k];
                 }
             }
         }
         return res;
     }
-    friend std::ostream& operator<<(std::ostream&out, const Matrix<N,M,I>&x){
-        for(int i=0;i<N;i++){
-            for(int j=0;j<M;j++){
+    friend std::ostream& operator<<(std::ostream&out, const Matrix<N,M,I>&x) {
+        for(int i=0; i<N; i++) {
+            for(int j=0; j<M; j++) {
                 out<<x[i][j]<<" \n"[j+1==M];
             }
         }
@@ -47,10 +47,10 @@ struct Matrix{
 };
 
 template<std::size_t N, std::size_t M, typename I>
-Matrix<N,M,I> Matrix<N,M,I>::IE = [](){
+Matrix<N,M,I> Matrix<N,M,I>::IE = []() {
     Matrix<N,M,I> IE;
-    for(int i=0;i<N;i++){
-        for(int j=0;j<M;j++){
+    for(int i=0; i<N; i++) {
+        for(int j=0; j<M; j++) {
             IE[i][j] = i==j ? I(1) : I(0);
         }
     }
