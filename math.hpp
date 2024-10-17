@@ -7,111 +7,7 @@ namespace Math {
     using i128 = __int128;
     const i64 INF = -1ULL >> 3;
     const long double EPS = 1e-16;
-    
-    namespace Basic {
-        i64 gcd(i64 a, i64 b) {
-            i64 neg = ((a < 0) ^ (b < 0)) ? -1 : 1;
-            a = std::abs(a); b = std::abs(b);
-            if((a&-a) < (b&-b)) { std::swap(a, b); }
-            if(b == 0) { return a; }
-            int bz = __builtin_ctzll(b);
-            b >>= bz;
-            while(a) {
-                a >>= __builtin_ctzll(a);
-                i64 tmp = b - a;
-                if(a < b) { b = a; }
-                a = std::abs(tmp);
-            }
-            return neg * (b << bz);
-        }
-        i64 qmul(i64 a, i64 b, i64 mod) {
-            i64 res = a*b - mod*(i64)(1.L/mod*a*b);
-            return res - mod*(res>=mod) + mod*(res<0);
-        }
-        i64 qpow(i64 a, i64 b, i64 mod) {
-            i64 res = 1ll;
-            while(b) {
-                if(b & 1) { res = qmul(res, a, mod); }
-                a = qmul(a, a, mod);
-                b >>= 1;
-            }
-            return res;
-        }
-        bool miller_rabin(i64 x) {
-            constexpr std::array<i64, 7> test_p = {2, 325, 9375, 28178, 450775, 9780504, 1795265022};
-            if(x<=3 || x%2 == 0) { return x==2 || x==3; }
-            if(x%6 != 1 && x%6 != 5) { return false; }
-            i64 k = x-1;
-            int r = __builtin_ctzll(k), j;
-            k >>= r;
-            for(auto p : test_p) {
-                if(p % x == 0) { continue; }
-                i64 v = qpow(p,k,x);
-                if(v == 1) { continue; }
-                for(j=1; j<=r; j++, v=qmul(v,v,x)) if(v==x-1) { break; }
-                if(j > r) { return false; }
-            }
-            return true;
-        }
-        i64 pollard_rho(i64 num) {
-            if(num % 2 == 0) { return 2; }
-            i64 val = 1ll, s = 0, t = 0;
-            static std::mt19937 eng(std::random_device{}());
-            i64 c = std::uniform_int_distribution<i64>(1ll, num-1)(eng);
-            auto func = [](i64 x,i64 c,i64 mod) {
-                return (qmul(x,x,mod) + c) % mod;
-            };
-            for(int goal=1; ; goal<<=1, s=t, val=1ll) {
-                for(int steps=1; steps<=goal; ++steps) {
-                    t = func(t, c, num);
-                    val = qmul(val, std::abs(t-s), num);
-                    if(steps % 127 == 0) {
-                        i64 gcd_ = gcd(val, num);
-                        if(gcd_ > 1) { return gcd_; }
-                    }
-                }
-                i64 gcd_ = gcd(val, num);
-                if(gcd_ > 1) { return gcd_; }
-            }
-            assert(false);
-        }
-        i64 max_prime_factor(i64 num) {
-            i64 max_factor = -1;
-            auto dfs = [&max_factor](auto dfs, i64 num) {
-                if(num <= max_factor || num < 2) { return; }
-                if(miller_rabin(num)) {
-                    return (void)(max_factor = std::max(max_factor, num));
-                }
-                i64 factor_ = pollard_rho(num);
-                while(factor_ >= num) { factor_ = pollard_rho(num); }
-                while(num % factor_ == 0) { num /= factor_; }
-                dfs(dfs, num); dfs(dfs, factor_);
-            };
-            dfs(dfs, num);
-            return max_factor;
-        }
-        std::array<std::pair<i64,i64>, 2> fraction(long double x, i64 M = INF, i64 N = INF) {
-            i64 m = 1, n = 1, lm=0, ln=1, rm=1, rn=0;
-            while(m<=M && n<=N) {
-                int k = 0, fl = x*n > m;
-                if(fl) { lm = m, ln = n; }
-                else { rm = m, rn = n; }
-                while(k>=0) {
-                    if(fl) { m = lm + (rm<<k), n = ln + (rn<<k); }
-                    else { m = (lm<<k) + rm, n = (ln<<k) + rn; }
-                    if(m>M || n>N) { break; }
-                    if((x*n > m) == fl) {
-                        if(fl) { lm = m, ln = n; }
-                        else { rm = m, rn = n; }
-                        k++;
-                    } else { k--; }
-                }
-                m=lm+rm; n=ln+rn;
-            }
-            return {std::make_pair(lm, ln), std::make_pair(rm, rn)};
-        }
-    }
-    
+
     namespace Sieve {
         std::vector<int> minp, primes, phi, mu;
         
@@ -189,6 +85,251 @@ namespace Math {
         }
     }
     
+    namespace Basic {
+        i64 gcd(i64 a, i64 b) {
+            i64 neg = ((a < 0) ^ (b < 0)) ? -1 : 1;
+            a = std::abs(a); b = std::abs(b);
+            if((a&-a) < (b&-b)) { std::swap(a, b); }
+            if(b == 0) { return a; }
+            int bz = __builtin_ctzll(b);
+            b >>= bz;
+            while(a) {
+                a >>= __builtin_ctzll(a);
+                i64 tmp = b - a;
+                if(a < b) { b = a; }
+                a = std::abs(tmp);
+            }
+            return neg * (b << bz);
+        }
+        // a*x + b*y = gcd(a, b) returns min positive x
+        std::array<i64, 3> exgcd(i64 a, i64 b){
+            auto __exgcd = [](auto&&__exgcd, auto a, auto b, auto&x, auto&y)->i64{
+                if(b==0){
+                    x = 1; y = 0; return a;
+                }
+                auto d = __exgcd(__exgcd, b, a%b, x, y);
+                std::tie(x, y) = std::make_pair(y, x - a / b * y);
+                return d;
+            };
+            i64 x, y;
+            auto d = __exgcd(__exgcd, a, b, x, y);
+            auto tx = b / d;
+            auto ty = a / d;
+            x = x + tx * (i64)ceil((1. - x) / tx);
+            y = (d - a * x) / b;
+            return {x, y, d};
+        }
+        i64 qmul(i64 a, i64 b, i64 mod) {
+            i64 res = a*b - mod*(i64)(1.L/mod*a*b);
+            return res - mod*(res>=mod) + mod*(res<0);
+        }
+        i64 qpow(i64 a, i64 b, i64 mod, i64 phi_mod = 0) {
+            a %= mod;
+            if(phi_mod > 0) b = std::min(b, b % phi_mod + phi_mod);
+            i64 res = 1ll;
+            while(b) {
+                if(b & 1) { res = qmul(res, a, mod); }
+                a = qmul(a, a, mod);
+                b >>= 1;
+            }
+            return res;
+        }
+        bool miller_rabin(i64 x) {
+            constexpr std::array<i64, 7> test_p = {2, 325, 9375, 28178, 450775, 9780504, 1795265022ll};
+            if(x<=3 || x%2 == 0) { return x==2 || x==3; }
+            if(x%6 != 1 && x%6 != 5) { return false; }
+            i64 k = x-1;
+            int r = __builtin_ctzll(k), j;
+            k >>= r;
+            for(auto p : test_p) {
+                if(p % x == 0) { continue; }
+                i64 v = qpow(p,k,x);
+                if(v == 1) { continue; }
+                for(j=1; j<=r; j++, v=qmul(v,v,x)) if(v==x-1) { break; }
+                if(j > r) { return false; }
+            }
+            return true;
+        }
+        i64 pollard_rho(i64 num) {
+            if(num % 2 == 0) { return 2; }
+            i64 val = 1ll, s = 0, t = 0;
+            static std::mt19937 eng(std::random_device{}());
+            i64 c = std::uniform_int_distribution<i64>(1ll, num-1)(eng);
+            auto func = [](i64 x,i64 c,i64 mod) {
+                return (qmul(x,x,mod) + c) % mod;
+            };
+            for(int goal=1; ; goal<<=1, s=t, val=1ll) {
+                for(int steps=1; steps<=goal; ++steps) {
+                    t = func(t, c, num);
+                    val = qmul(val, std::abs(t-s), num);
+                    if(steps % 127 == 0) {
+                        i64 gcd_ = gcd(val, num);
+                        if(gcd_ > 1) { return gcd_; }
+                    }
+                }
+                i64 gcd_ = gcd(val, num);
+                if(gcd_ > 1) { return gcd_; }
+            }
+            assert(false);
+        }
+        i64 max_prime_factor(i64 num) {
+            i64 max_factor = -1;
+            auto dfs = [&max_factor](auto dfs, i64 num) {
+                if(num <= max_factor || num < 2) { return; }
+                if(miller_rabin(num)) {
+                    return (void)(max_factor = std::max(max_factor, num));
+                }
+                i64 factor_ = pollard_rho(num);
+                while(factor_ >= num) { factor_ = pollard_rho(num); }
+                while(num % factor_ == 0) { num /= factor_; }
+                dfs(dfs, num); dfs(dfs, factor_);
+            };
+            dfs(dfs, num);
+            return max_factor;
+        }
+        std::vector<i64> get_factors(i64 x){
+            std::vector<i64> res;
+            while(x > 1){
+                i64 p = (Sieve::minp.size() > x) ? Sieve::minp[x] : max_prime_factor(x);
+                for(auto pp=p; x%pp==0 || ((pp=p) && x%p==0); pp*=pp) x/=pp;
+                res.push_back(p);
+            }
+            return res;
+        }
+        i64 phi(i64 x) {
+            if(Sieve::phi.size() > x) return Sieve::phi[x];
+            i64 res = x;
+            for(auto p : get_factors(x)){
+                res = res / p * (p-1);
+            }
+            return res;
+        }
+        i64 inv(i64 a, i64 mod) {
+            auto[x, y, d] = exgcd(a, mod);
+            if(d > 1) return -1;
+            return x;
+            // return qpow(a, phi(mod) - 1, mod);
+        }
+        // warning: memory-record
+        i64 inv_li(i64 a, i64 mod){
+            if(a == 1) return 1;
+            return qmul(mod - mod / a, inv_li(mod % a, mod), mod);
+        }
+        i64 primitive_root(i64 x, i64 phi_x = 0) {
+            // x is 2 || 4 || prime^k || 2*prime^k
+            if(phi_x < 1) phi_x = phi(x);
+            auto facs = get_factors(phi_x);
+            for(i64 g=2; g<x; g++){
+                bool fl = true;
+                for(auto fac : facs){
+                    if(qpow(g, phi_x/fac, x) == 1){
+                        fl = false;
+                        break;
+                    }
+                }
+                if(fl) return g;
+            }
+            return -1;
+        }
+        // x == ai (mod mi)
+        template<typename Iterable>
+        std::array<i64, 2> exCRT(const Iterable&a, const Iterable&m){
+            auto a_itr = a.begin();
+            auto m_itr = m.begin();
+            if(a_itr == a.end() || m_itr == m.end()) return {-1};
+            auto a0 = *a_itr++;
+            auto m0 = *m_itr++; a0 %= m0;
+            while(a_itr != a.end() && m_itr != m.end()){
+                auto ai = *a_itr++;
+                auto mi = *m_itr++; ai %= mi;
+                // (ai - a0) == x * m0 - y * mi
+                auto[x, y, d] = exgcd(m0, mi);
+                if((ai - a0) % d != 0) return {-1};
+                mi = m0 / d * mi;
+                x = qmul((ai - a0) / d, x, mi);
+                a0 = (a0 + qmul(x, m0, mi)) % mi;
+                m0 = mi;
+            }
+            return {a0, m0};
+        }
+        // ax == b (mod m)
+        i64 liEu(i64 a, i64 b, i64 m){
+            a %= m; b %= m;
+            auto d = gcd(a, m);
+            if(b % d != 0) return -1;
+            // x = x0 + i * n / d
+            return (b / d) * inv(a / d, m / d) % (m / d);
+        }
+        // c * a^x == b (mod m) BSGS
+        i64 BSGS(i64 a, i64 b, i64 m, i64 c = 1) {
+            a %= m; b %= m; c %= m;
+            if(b == c || m == 1) return 0;
+            // a^k/D * a^(x-k) == b/D (mod m/D)
+            i64 k = 0, D = 1, akD = 1;
+            for(i64 d; (d=gcd(a, m/D)) > 1; ){
+                if(b/D % d != 0) return -1;
+                k++; D *= d; akD = qmul(akD, (a / d), m);
+                if(qmul(c, qmul(akD, D, m), m) == b){
+                    return k;
+                }
+            }
+            m = m / D; b = b / D;
+            a %= m; b %= m; c = qmul(c, akD, m);
+            
+            i64 sqm = std::ceil(std::sqrt(m));
+
+            std::unordered_map<i64, i64> baby_steps;
+            for(i64 i=0, ax=1; i<sqm; i++){
+                i64 baby_step = qmul(ax, b, m);
+                baby_steps[baby_step] = i;
+                ax = qmul(ax, a, m);
+            }
+            i64 x = -1;
+            for(i64 j=1, asqm=qpow(a, sqm, m), ax=asqm; x<=0 && j<=sqm; j++){
+                i64 giant_step = qmul(ax, c, m);
+                if(baby_steps.count(giant_step)){
+                    x = j * sqm - baby_steps[giant_step];
+                }
+                ax = qmul(ax, asqm, m);
+            }
+            if(x == -1) return -1;
+            return x + k;
+        }
+        // x^a == b (mod m)
+        std::vector<i64> LOG_BSGS(i64 a, i64 b, i64 m, i64 phi_m = 0) {
+            // g^(ac) == b (mod m)
+            if(phi_m < 1) phi_m = phi(m);
+            auto g = primitive_root(m, phi_m);
+
+            auto ac = BSGS(g, b, m);
+            auto delta = phi_m / gcd(a, phi_m);
+            std::vector<i64> ans;
+            for(auto cur=ac%delta; cur<phi_m; cur+=delta){
+                ans.push_back(qpow(g, cur, m));
+            }
+            return ans;
+        }
+        std::array<std::pair<i64,i64>, 2> fraction(long double x, i64 M = INF, i64 N = INF) {
+            i64 m = 1, n = 1, lm=0, ln=1, rm=1, rn=0;
+            while(m<=M && n<=N) {
+                int k = 0, fl = x*n > m;
+                if(fl) { lm = m, ln = n; }
+                else { rm = m, rn = n; }
+                while(k>=0) {
+                    if(fl) { m = lm + (rm<<k), n = ln + (rn<<k); }
+                    else { m = (lm<<k) + rm, n = (ln<<k) + rn; }
+                    if(m>M || n>N) { break; }
+                    if((x*n > m) == fl) {
+                        if(fl) { lm = m, ln = n; }
+                        else { rm = m, rn = n; }
+                        k++;
+                    } else { k--; }
+                }
+                m=lm+rm; n=ln+rn;
+            }
+            return {std::make_pair(lm, ln), std::make_pair(rm, rn)};
+        }
+    }
 }
 
 #endif
