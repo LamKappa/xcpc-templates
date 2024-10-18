@@ -123,6 +123,15 @@ namespace Math {
             i64 res = a*b - mod*(i64)(1.L/mod*a*b);
             return res - mod*(res>=mod) + mod*(res<0);
         }
+        i64 qpow(i64 a, int b){
+            i64 res = 1;
+            while(b) {
+                if(b & 1) res *= a;
+                a *= a;
+                b >>= 1;
+            }
+            return res;
+        }
         i64 qpow(i64 a, i64 b, i64 mod, i64 phi_mod = 0) {
             a %= mod;
             if(phi_mod > 0) b = std::min(b, b % phi_mod + phi_mod);
@@ -187,19 +196,19 @@ namespace Math {
             dfs(dfs, num);
             return max_factor;
         }
-        std::vector<i64> get_factors(i64 x){
-            std::vector<i64> res;
+        std::vector<std::pair<i64, int>> factorize(i64 x){
+            std::vector<std::pair<i64, int>> fac;
             while(x > 1){
-                i64 p = (Sieve::minp.size() > x) ? Sieve::minp[x] : max_prime_factor(x);
-                for(auto pp=p; x%pp==0 || ((pp=p) && x%p==0); pp*=pp) x/=pp;
-                res.push_back(p);
+                i64 p = (Sieve::minp.size() > x) ? Sieve::minp[x] : max_prime_factor(x), cnt = 0;
+                for(auto pp=p, k=1ll; x%pp==0 || ((pp=p,k=1ll) && x%p==0); pp*=pp, k<<=1) x/=pp, cnt+=k;
+                fac.emplace_back(p, cnt);
             }
-            return res;
+            return fac;
         }
         i64 phi(i64 x) {
             if(Sieve::phi.size() > x) return Sieve::phi[x];
             i64 res = x;
-            for(auto p : get_factors(x)){
+            for(auto [p, _] : factorize(x)){
                 res = res / p * (p-1);
             }
             return res;
@@ -210,18 +219,13 @@ namespace Math {
             return x;
             // return qpow(a, phi(mod) - 1, mod);
         }
-        // warning: memory-record
-        i64 inv_li(i64 a, i64 mod){
-            if(a == 1) return 1;
-            return qmul(mod - mod / a, inv_li(mod % a, mod), mod);
-        }
         i64 primitive_root(i64 x, i64 phi_x = 0) {
             // x is 2 || 4 || prime^k || 2*prime^k
             if(phi_x < 1) phi_x = phi(x);
-            auto facs = get_factors(phi_x);
+            auto facs = factorize(phi_x);
             for(i64 g=2; g<x; g++){
                 bool fl = true;
-                for(auto fac : facs){
+                for(auto [fac, _] : facs){
                     if(qpow(g, phi_x/fac, x) == 1){
                         fl = false;
                         break;
@@ -232,16 +236,11 @@ namespace Math {
             return -1;
         }
         // x == ai (mod mi)
-        template<typename Iterable>
-        std::array<i64, 2> exCRT(const Iterable&a, const Iterable&m){
-            auto a_itr = a.begin();
-            auto m_itr = m.begin();
-            if(a_itr == a.end() || m_itr == m.end()) return {-1};
-            auto a0 = *a_itr++;
-            auto m0 = *m_itr++; a0 %= m0;
-            while(a_itr != a.end() && m_itr != m.end()){
-                auto ai = *a_itr++;
-                auto mi = *m_itr++; ai %= mi;
+        std::array<i64, 2> exCRT(const std::vector<std::pair<i64, i64>>&eq){
+            if(eq.empty()) return {-1};
+            auto[a0 ,m0] = eq.front(); a0 %= m0;
+            for(int i=1; i<eq.size(); i++){
+                auto[ai, mi] = eq[i]; ai %= mi;
                 // (ai - a0) == x * m0 - y * mi
                 auto[x, y, d] = exgcd(m0, mi);
                 if((ai - a0) % d != 0) return {-1};
@@ -329,6 +328,91 @@ namespace Math {
             }
             return {std::make_pair(lm, ln), std::make_pair(rm, rn)};
         }
+        
+        struct Lucas{
+            i64 mod;
+            std::vector<i64> fac, inv, inv_fac;
+            Lucas(i64 mod) : mod(mod){
+                fac.resize(mod); 
+                inv.resize(mod);
+                inv_fac.resize(mod);
+                fac[1] = inv[1] = inv_fac[1] = 1;
+                for(int i=2; i<mod; i++){
+                    fac[i] = qmul(fac[i-1], i, mod);
+                    inv[i] = qmul(mod - mod / i, inv[mod % i], mod);
+                    inv_fac[i] = qmul(inv_fac[i-1], inv[i], mod);
+                }
+            }
+            i64 C(i64 n, i64 m){
+                if(n <= m || m <= 0){
+                    return n == m || m == 0;
+                }
+                if(n < mod){
+                    return qmul(qmul(fac[n], inv_fac[m], mod), inv_fac[n - m], mod);
+                }else{
+                    return qmul(C(n % mod, m % mod), C(n / mod, m / mod), mod);
+                }
+            }
+            i64 operator()(i64 n, i64 m){
+                return C(n, m);
+            }
+        };
+
+        struct exLucas{
+            i64 mod;
+            std::vector<std::pair<i64, int>> fac;
+            std::vector<i64> pk;
+            std::vector<std::vector<i64>> prod;
+            exLucas(i64 mod) : mod(mod), fac(factorize(mod)){
+                pk.resize(fac.size());
+                prod.resize(fac.size());
+                for(int i=0; i<fac.size(); i++){
+                    auto[p, k] = fac[i];
+                    pk[i] = qpow(p, k);
+                    prod[i].resize(pk[i]); prod[i][0] = 1;
+                    for(int j=1; j<prod[i].size(); j++){
+                        if(j % p != 0){
+                            prod[i][j] = qmul(prod[i][j - 1], j, pk[i]);
+                        }else{
+                            prod[i][j] = prod[i][j-1];
+                        }
+                    }
+                }
+            }
+            i64 operator()(i64 n, i64 m){
+                if(n <= m || m <= 0){
+                    return n == m || m == 0;
+                }
+                std::vector<std::pair<i64, i64>> eq(fac.size());
+                for(int i=0; i<fac.size(); i++){
+                    auto[p, k] = fac[i];
+                    auto exponent = [&](i64 n)->i64{
+                        i64 res = 0;
+                        while(n /= p) res += n;
+                        return res;
+                    };
+                    auto product = [&](i64 n)->i64{
+                        i64 res = 1;
+                        do{
+                            if((n / pk[i]) % 2) res = pk[i] - res;
+                            res = qmul(res, prod[i][n % pk[i]], pk[i]);
+                        }while(n /= p);
+                        return res;
+                    };
+                    auto e = exponent(n) - exponent(m) - exponent(n - m);
+                    if(e >= k){
+                        eq[i] = {0, pk[i]};
+                    }else{
+                        i64 c = qpow(p, e, pk[i], pk[i]-pk[i]/k);
+                        c = qmul(c, product(n), pk[i]);
+                        c = qmul(c, inv(product(m), pk[i]), pk[i]);
+                        c = qmul(c, inv(product(n - m), pk[i]), pk[i]);
+                        eq[i] = {c, pk[i]};
+                    }
+                }
+                return exCRT(eq)[0];
+            }
+        };
     }
 }
 
