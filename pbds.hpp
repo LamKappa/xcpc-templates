@@ -85,7 +85,8 @@ void clear()            清空
 const int RANDOM = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 template<typename K_T>
 struct Chash{
-    int operator()(K_T x)const{return std::hash(x)^RANDOM;}
+    static std::hash<K_T> hash;
+    int operator()(K_T x)const{return hash(x)^RANDOM;}
 };
 template<typename K_T, typename V_T, typename Hash = Chash<K_T>>
 using hash_table = __gnu_pbds::cc_hash_table<K_T, V_T, Hash>;
