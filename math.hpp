@@ -9,15 +9,18 @@ namespace Math {
     const long double EPS = 1e-16;
 
     namespace Sieve {
-        std::vector<int> minp, primes, phi, mu;
+        std::vector<i64> minp, primes, phi, mu;
         
         void init(int N) {
-            minp.assign(N+1, 0);
-            phi.assign(N+1, 0);
-            mu.assign(N+1, 0); mu[1] = 1;
-            primes.clear();
+            int last_n = std::max<int>(2, minp.size());
+            if(primes.empty()){
+                minp.assign(N+1, 0);
+                phi.assign(N+1, 0);
+                mu.assign(N+1, 0); mu[1] = 1;
+                primes.clear();
+            }
             
-            for(int n=2; n<=N; n++) {
+            for(int n=last_n; n<=N; n++) {
                 if(0==minp[n]) {
                     minp[n] = n;
                     phi[n]  = n-1;
@@ -182,7 +185,7 @@ namespace Math {
             assert(false);
         }
         i64 max_prime_factor(i64 num) {
-            i64 max_factor = -1;
+            i64 max_factor = 1;
             auto dfs = [&max_factor](auto dfs, i64 num) {
                 if(num <= max_factor || num < 2) { return; }
                 if(miller_rabin(num)) {
@@ -205,10 +208,10 @@ namespace Math {
             }
             return fac;
         }
-        i64 phi(i64 x) {
+        i64 phi(i64 x, const std::vector<std::pair<i64, int>>&fac={}) {
             if(Sieve::phi.size() > x) return Sieve::phi[x];
             i64 res = x;
-            for(auto [p, _] : factorize(x)){
+            for(auto [p, _] : fac.empty() ? factorize(x) : fac){
                 res = res / p * (p-1);
             }
             return res;
@@ -219,21 +222,32 @@ namespace Math {
             return x;
             // return qpow(a, phi(mod) - 1, mod);
         }
-        i64 primitive_root(i64 x, i64 phi_x = 0) {
+        std::array<i64, 2> primitive_root(i64 x) {
             // x is 2 || 4 || prime^k || 2*prime^k
-            if(phi_x < 1) phi_x = phi(x);
-            auto facs = factorize(phi_x);
+            auto fac_x = factorize(x);
+            if(fac_x.size() > 1){
+                if(fac_x[0].first > fac_x[1].first) std::swap(fac_x[0], fac_x[1]);
+                if(fac_x.size() != 2 || fac_x[0].second != 1){
+                    return {-1};
+                }
+            }else if(x % 2 == 0){
+                if(x <= 4) return {x-1, x/2};
+                return {-1};
+            }
+            auto phi_x = phi(x, fac_x);
+            auto fac_phi_x = factorize(phi_x);
             for(i64 g=2; g<x; g++){
                 bool fl = true;
-                for(auto [fac, _] : facs){
+                if(gcd(g, x) > 1) continue;
+                for(auto [fac, _] : fac_phi_x){
                     if(qpow(g, phi_x/fac, x) == 1){
                         fl = false;
                         break;
                     }
                 }
-                if(fl) return g;
+                if(fl) return {g, phi_x};
             }
-            return -1;
+            return {-1};
         }
         // x == ai (mod mi)
         std::array<i64, 2> exCRT(const std::vector<std::pair<i64, i64>>&eq){
@@ -254,13 +268,14 @@ namespace Math {
         // ax == b (mod m)
         i64 liEu(i64 a, i64 b, i64 m){
             a %= m; b %= m;
+            if(a == 0) return b == 0 ? 0 : -1;
             auto d = gcd(a, m);
             if(b % d != 0) return -1;
             // x = x0 + i * n / d
             return (b / d) * inv(a / d, m / d) % (m / d);
         }
-        // c * a^x == b (mod m) BSGS
-        i64 BSGS(i64 a, i64 b, i64 m, i64 c = 1) {
+        // c * a^x == b (mod m) exBSGS
+        i64 exBSGS(i64 a, i64 b, i64 m, i64 c = 1) {
             a %= m; b %= m; c %= m;
             if(b == c || m == 1) return 0;
             // a^k/D * a^(x-k) == b/D (mod m/D)
@@ -284,26 +299,64 @@ namespace Math {
                 ax = qmul(ax, a, m);
             }
             i64 x = -1;
-            for(i64 j=1, asqm=qpow(a, sqm, m), ax=asqm; x<=0 && j<=sqm; j++){
+            for(i64 j=1, asqm=qpow(a, sqm, m), ax=asqm; j<=sqm; j++){
                 i64 giant_step = qmul(ax, c, m);
                 if(baby_steps.count(giant_step)){
                     x = j * sqm - baby_steps[giant_step];
+                    break;
                 }
                 ax = qmul(ax, asqm, m);
             }
             if(x == -1) return -1;
             return x + k;
         }
-        // x^a == b (mod m)
-        std::vector<i64> LOG_BSGS(i64 a, i64 b, i64 m, i64 phi_m = 0) {
-            // g^(ac) == b (mod m)
-            if(phi_m < 1) phi_m = phi(m);
-            auto g = primitive_root(m, phi_m);
+        // g^x == {b0, b1, b2, ...} (mod m)
+        std::pair<i64, std::vector<i64>> logs(const std::vector<i64>&b_vec, i64 m, i64 g=-1, i64 phi_m=-1){
+            // assert(gcd(bi, m) == 1)
+            if(g == -1){
+                std::tie(g, phi_m) = std::tuple_cat(primitive_root(m));
+            }else if(phi_m == -1){
+                phi_m = phi(m);
+            }
 
-            auto ac = BSGS(g, b, m);
+            auto n = b_vec.size();
+            i64 B = std::sqrt(phi_m * n);
+            i64 BB = (phi_m + B - 1) / B;
+
+            std::unordered_map<i64, i64> baby_steps;
+            for(i64 i=0, gx=1; i<B; i++){
+                baby_steps[gx] = i;
+                gx = qmul(gx, g, m);
+            }
+            std::vector<i64> x(n, -1);
+            for(int i=0; i<n; i++){
+                auto b = b_vec[i];
+                if(b == 1 || m == 1) { x[i] = 0; continue; }
+                for(i64 j=1, gB=qpow(g, B, m), gx=qmul(gB, inv(b, m), m); j<=BB; j++){
+                    if(baby_steps.count(gx)){
+                        x[i] = j * B - baby_steps[gx];
+                        break;
+                    }
+                    gx = qmul(gx, gB, m);
+                }
+            }
+            return {g, x};
+        }
+        // x^a == b (mod m)
+        // TODO: b==0 || m not prime
+        std::vector<i64> LOG_BSGS(i64 a, i64 b, i64 m) {
+            // g^(a*c) == b (mod m)
+            // ac == t (mod phi(m))
+            auto[g, phi_m] = primitive_root(m);
+            if(g == -1) return {};
+
+            auto t = exBSGS(g, b, m);
+            if(t == -1) return {};
+            auto c = liEu(a, t, phi_m);
+            if(c == -1) return {};
             auto delta = phi_m / gcd(a, phi_m);
             std::vector<i64> ans;
-            for(auto cur=ac%delta; cur<phi_m; cur+=delta){
+            for(auto cur=c%delta; cur<phi_m; cur+=delta){
                 ans.push_back(qpow(g, cur, m));
             }
             return ans;
@@ -332,7 +385,7 @@ namespace Math {
         struct Lucas{
             i64 mod;
             std::vector<i64> fac, inv, inv_fac;
-            Lucas(i64 mod) : mod(mod){
+            Lucas(i64 _mod) : mod(_mod){
                 fac.resize(mod); 
                 inv.resize(mod);
                 inv_fac.resize(mod);
@@ -343,7 +396,7 @@ namespace Math {
                     inv_fac[i] = qmul(inv_fac[i-1], inv[i], mod);
                 }
             }
-            i64 C(i64 n, i64 m){
+            i64 C(i64 n, i64 m)const{
                 if(n <= m || m <= 0){
                     return n == m || m == 0;
                 }
@@ -353,7 +406,7 @@ namespace Math {
                     return qmul(C(n % mod, m % mod), C(n / mod, m / mod), mod);
                 }
             }
-            i64 operator()(i64 n, i64 m){
+            i64 operator()(i64 n, i64 m)const{
                 return C(n, m);
             }
         };
@@ -363,23 +416,22 @@ namespace Math {
             std::vector<std::pair<i64, int>> fac;
             std::vector<i64> pk;
             std::vector<std::vector<i64>> prod;
-            exLucas(i64 mod) : mod(mod), fac(factorize(mod)){
+            exLucas(i64 _mod) : mod(_mod), fac(factorize(mod)){
                 pk.resize(fac.size());
                 prod.resize(fac.size());
                 for(int i=0; i<fac.size(); i++){
                     auto[p, k] = fac[i];
                     pk[i] = qpow(p, k);
                     prod[i].resize(pk[i]); prod[i][0] = 1;
-                    for(int j=1; j<prod[i].size(); j++){
-                        if(j % p != 0){
-                            prod[i][j] = qmul(prod[i][j - 1], j, pk[i]);
-                        }else{
-                            prod[i][j] = prod[i][j-1];
+                    for(int j=0; j<pk[i]; j+=p){
+                        if(j) prod[i][j] = prod[i][j-1];
+                        for(int J=1; J<p; J++){
+                            prod[i][j + J] = qmul(prod[i][j + J - 1], j + J, pk[i]);
                         }
                     }
                 }
             }
-            i64 operator()(i64 n, i64 m){
+            i64 operator()(i64 n, i64 m)const{
                 if(n <= m || m <= 0){
                     return n == m || m == 0;
                 }
@@ -411,6 +463,134 @@ namespace Math {
                     }
                 }
                 return exCRT(eq)[0];
+            }
+        };
+
+        template<std::size_t B>
+        struct BSGS{
+            i64 m, g, cyc_g;
+            std::unordered_map<i64, i64> baby_steps;
+            BSGS(i64 _m, i64 _g=-1, i64 _cyc_g=-1) : m(_m), g(_g), cyc_g(_cyc_g){
+                // g is generator of m with cyclic of cyc_g
+                if(g == -1){
+                    std::tie(g, cyc_g) = std::tuple_cat(primitive_root(m));
+                }else if(cyc_g == -1){
+                    cyc_g = phi(m);
+                }
+
+                for(i64 i=0, gx=1; i<B; i++){
+                    baby_steps[gx] = i;
+                    gx = qmul(gx, g, m);
+                }
+            }
+            // g^x == b (mod m)
+            i64 operator()(i64 b)const{
+                if(b == 1 || m == 1) return 0;
+                i64 BB = (cyc_g + B - 1) / B;
+
+                for(i64 j=1, gB=qpow(g, B, m), gx=qmul(gB, inv(b, m), m); j<=BB; j++){
+                    if(baby_steps.count(gx)){
+                        return j * B - (baby_steps.find(gx)->second);
+                    }
+                    gx = qmul(gx, gB, m);
+                }
+                return -1;
+            }
+            // a^x == b (mod m)
+            // xa*x == xb (mod cyc_g)
+            i64 operator()(i64 a, i64 b)const{
+                auto&bsgs = *this;
+                return liEu(bsgs(a), bsgs(b), cyc_g);
+            }
+        };
+
+        // based on Index Calculus
+        template<std::size_t B>
+        struct IndexCalculus{
+            i64 mod, g, phi_m;
+            std::vector<i64> primes, x_primes;
+            IndexCalculus(i64 _mod, i64 _g=-1, i64 _phi_m=-1) : mod(_mod), g(_g), phi_m(_phi_m){
+                if(g == -1){
+                    std::tie(g, phi_m) = std::tuple_cat(primitive_root(mod));
+                }else if(phi_m == -1){
+                    phi_m = phi(mod);
+                }
+
+                Sieve::init(B);
+                auto pn = std::upper_bound(Sieve::primes.begin(), Sieve::primes.end(), B) - Sieve::primes.begin() - 1;
+                primes = {Sieve::primes.begin(), Sieve::primes.begin() + pn + 1};
+                x_primes = logs(primes, mod, g, phi_m).second;
+            }
+            // g^x == b (mod m);
+            i64 operator()(i64 b)const{
+                static std::mt19937 eng{std::random_device{}()};
+                for(i64 y = 0; ; y = eng() % phi_m){
+                    auto z = qmul(b, qpow(g, y, mod, phi_m), mod);
+                    auto max_p = max_prime_factor(z);
+                    if(max_p > B) continue;
+                    auto fac = factorize(z / max_p);
+                    sort(fac.begin(), fac.end());
+                    if(fac.empty() || fac.back().first != max_p){
+                        if(max_p > 1) fac.emplace_back(max_p, 1);
+                    }else fac.back().second++;
+                    i64 ans = 0;
+                    for(int i=0, j=0; i<fac.size(); i++){
+                        auto[p, k] = fac[i];
+                        while(primes[j] < p) j++;
+                        ans = (ans + qmul(k, x_primes[j], phi_m)) % phi_m;
+                    }
+                    return (ans + phi_m - y) % phi_m;
+                }
+            }
+        };
+
+        // based on Pohlig–Hellman
+        template<std::size_t B>
+        struct PohligHellman{
+            i64 m, g, phi_m;
+            std::vector<std::pair<i64, int>> fac;
+            std::vector<i64> pk, gi;
+            std::vector<BSGS<B>> bsgs;
+            PohligHellman(i64 _m, i64 _g=-1, i64 _phi_m=-1) : m(_m), g(_g), phi_m(_phi_m){
+                if(g == -1){
+                    std::tie(g, phi_m) = std::tuple_cat(primitive_root(m));
+                }else if(phi_m == -1){
+                    phi_m = phi(m);
+                }
+
+                fac = factorize(phi_m);
+                pk.resize(fac.size());
+                gi.resize(fac.size());
+                bsgs.reserve(fac.size());
+                for(int i=0; i<fac.size(); i++){
+                    auto[p, k] = fac[i];
+                    pk[i] = qpow(p, k);
+                    gi[i] = qpow(g, phi_m / pk[i], m);
+                    bsgs.emplace_back(m, gi[i], pk[i]);
+                }
+            }
+            // g^x == h (mod m);
+            i64 operator()(i64 h)const{
+                std::vector<std::pair<i64, i64>> eq;
+                for(int i=0; i<fac.size(); i++){
+                    auto[p, k] = fac[i];
+                    auto hi = qpow(h, phi_m / pk[i], m);
+                    auto calc = [&](i64 gi, i64 hi)->i64{
+                        i64 x = 0, pe = 1, ga = qpow(gi, pk[i]/p, m);
+                        for(int e=0; e<k; e++, pe*=p){
+                            auto he = qpow(qmul(hi, inv(qpow(gi, x, m), m), m), pk[i]/pe/p, m);
+                            x = (x + qmul(pe, bsgs[i](ga, he), pk[i])) % pk[i];
+                        }
+                        return x;
+                    };
+                    auto xi = calc(gi[i], hi);
+                    eq.emplace_back(xi, pk[i]);
+                }
+                return exCRT(eq)[0];
+            }
+            i64 operator()(i64 a, i64 b)const{
+                auto&bsgs = *this;
+                return liEu(bsgs(a), bsgs(b), phi_m);
             }
         };
     }
