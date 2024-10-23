@@ -4,22 +4,25 @@
 using u64 = unsigned long long;
 struct SHash{
     static constexpr std::size_t C = 2;
-    static constexpr std::array<u64, C> M = {(-1u + 1ull),1000000007};
-    // Ms = {1000000007,1118872217,122420729,163227661,217636919,
-    //       290182597,386910137,515880193,687840301,917120411,
-    //       1222827239,1610612741,3221225473ul,4294967291ul
-    // };
+    static constexpr u64 M[] = {
+        (-1u + 1ull),1000000007,1118872217,122420729,163227661,
+        217636919,290182597,386910137,515880193,687840301,
+        917120411,1222827239,1610612741,3221225473ul,4294967291ul
+    };
 
     std::array<u64, C> val;
 
     SHash() { val.fill(0ull); }
 
     SHash(const std::initializer_list<u64>&list) {
-        std::copy(list.begin(), list.end(), val.begin());
+        std::copy(list.begin(), list.begin()+C, val.begin());
     }
 
     bool operator==(const SHash&o)const{
         return val == o.val;
+    }
+    bool operator<(const SHash&o)const{
+        return val < o.val;
     }
     SHash operator*(const SHash&o)const{
         SHash res = *this;
@@ -70,8 +73,7 @@ namespace std {
         }
     };
 }
-static const SHash B = {37, 53};
-// Bs = {37, 53, 71, 97, 137, 251, 353, 491, 599, 617, 773, 853, 977, 1009};
+static const SHash B = {37, 53, 71, 97, 137, 251, 353, 491, 599, 617, 773, 853, 977, 1009};
 constexpr int MAXN = 1000005;
 static const std::array<SHash, MAXN+1> Bp = [](){
     std::array<SHash, MAXN+1> Bp;
@@ -81,5 +83,18 @@ static const std::array<SHash, MAXN+1> Bp = [](){
     }
     return Bp;
 }();
+
+std::vector<SHash> build_prefix(std::string s){
+    std::vector<SHash> prefix(s.size() + 1);
+    for(int i=1; i<=s.size(); i++){
+        prefix[i] = prefix[i-1]*B + s[i-1];
+    }
+    return prefix;
+}
+
+SHash get(const std::vector<SHash>&prefix, int l, int r){
+    if(l > r) return SHash{};
+    return prefix[r] - prefix[l-1];
+}
 
 #endif
