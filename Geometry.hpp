@@ -40,7 +40,7 @@ namespace Geometry{
             return p * r;
         }
         friend Point operator/(const Point&p, f80 r){
-            return {r * p.x, r * p.y};
+            return {p.x / r, p.y / r};
         }
         friend bool operator==(const Point& a, const Point&b){
             return a.between(b, b);
@@ -222,7 +222,7 @@ namespace Geometry{
             if(C.r < d) return noLine;
             return intersection(C, C.inversion(L));
         }
-        Line tangency_line(const Point&p) const{
+        std::array<Point, 2> tangency_line(const Point&p) const{
             f80 d = dist(p, c);
             if(d + EPS < r) return noLine;
             if(fabsl(d - r) < EPS) return Line{
