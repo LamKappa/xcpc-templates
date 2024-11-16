@@ -45,7 +45,7 @@ namespace ConvexHull{
     template<typename ItA>
     Points minkowski_sum(const ItA&poly1, const ItA&poly2) {
         Points a{poly1.begin(), poly1.end()},
-               b{poly2.begin(), poly2.end()};
+                b{poly2.begin(), poly2.end()};
         Point a0 = a[0], b0 = b[0];
         Points c{a0 + b0};
         for(int i = 0; i + 1 < a.size(); i++) a[i] = a[i + 1] - a[i];
@@ -88,14 +88,41 @@ namespace ConvexHull{
         }
         f80 area() const{
             return std::accumulate(vec.begin(), vec.end(), 0.l, [c=(*this)[0]](auto s, auto&L){
-                return s + cross(Point(L), c);
+                return s + cross(Point(L), c - L[0]) / 2.l;
             });
         }
         Point center() const{
-            Point c = std::accumulate(begin(), end(), Point{}) / size();
-            return std::accumulate(vec.begin(), vec.end(), c, [](auto&p, auto&L){
-                return (p + L[0] + L[1]) / 3.l * cross(Point(L), p);
+            return std::accumulate(vec.begin(), vec.end(), Point{}, [](auto&p, auto&L){
+                return (p + L[0] + L[1]) / 3.l * cross(Point(L), p) / 2.l;
             }) / area();
+        }
+        std::array<std::size_t, 2> tangency_line(const Point&p) const{
+            auto&H = *this;
+            auto up = [&](int i, int j){
+                if(i >= size()) i -= (int)size();
+                if(j >= size()) j -= (int)size();
+                return Line{H[i], H[j]}.onLeft(p);
+            };
+            auto binary_search = [&](const auto&&func){
+                std::size_t l = 0, r = size() - 1;
+                while(l < r){
+                    std::tie(l, r) = func(l, r, (l + r) / 2);
+                }
+                return l;
+            };
+            auto p1 = binary_search([&](int l, int r, int m){
+                bool f1 = up(l, l + 1) <= 0, f2 = up(m, m + 1) < 0, f3 = up(l, m) <= 0;
+                if(!f1 && (up(r, r + 1) < 0 || up(l, r) > 0)) return std::make_pair(l, l);
+                if((f1 && f2 && f3) || (!f1 && (f2 || !f3))) return std::make_pair(m + 1, r);
+                return std::make_pair(l, m);
+            });
+            auto p2 = binary_search([&](int l, int r, int m){
+                bool f1 = up(l, l + 1) >= 0, f2 = up(m, m + 1) >= 0, f3 = up(l, m) >= 0;
+                if(!f1 && (up(r, r + 1) >= 0 || up(l, r) < 0)) return std::make_pair(l, l);
+                if((f1 && f2 && f3) || (!f1 && (f2 || !f3))) return std::make_pair(m + 1, r);
+                return std::make_pair(l, m);
+            });
+            return {p1, p2};
         }
     };
 }
