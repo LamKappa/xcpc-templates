@@ -82,14 +82,14 @@ void clear()            清空
 /***************/
 
 // 哈希表
-const int RANDOM = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-template<typename K_T>
-struct Chash{
-    static std::hash<K_T> hash;
-    int operator()(K_T x)const{return hash(x)^RANDOM;}
-};
-template<typename K_T, typename V_T, typename Hash = Chash<K_T>>
-using hash_table = __gnu_pbds::cc_hash_table<K_T, V_T, Hash>;
+// const int RANDOM = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+// template<typename K_T>
+// struct Chash{
+//     static std::hash<K_T> hash;
+//     int operator()(K_T x)const{return hash(x)^RANDOM;}
+// };
+template<typename K_T, typename V_T, typename Hash = std::hash<K_T>>
+using hash_table = __gnu_pbds::gp_hash_table<K_T, V_T, Hash>;
 
 /*
 tag:

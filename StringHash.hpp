@@ -5,7 +5,7 @@ using u64 = unsigned long long;
 struct SHash{
     static constexpr std::size_t C = 2;
     static constexpr u64 M[] = {
-        (-1u + 1ull),1000000007,1118872217,122420729,163227661,
+        1000000007,1118872217,122420729,163227661,
         217636919,290182597,386910137,515880193,687840301,
         917120411,1222827239,1610612741,3221225473ul,4294967291ul
     };
@@ -54,7 +54,7 @@ struct SHash{
         SHash res;
         for(int i=0; i<C; i++){
             if(val[i] >= o.val[i]) res.val[i] = val[i] - o.val[i];
-            else res.val[i] = val[i] + M[i] - o.val[i];
+            else res.val[i] = val[i] + (M[i] - o.val[i]);
         }
         return res.norm();
     }
@@ -74,7 +74,7 @@ namespace std {
     };
 }
 static const SHash B = {37, 53, 71, 97, 137, 251, 353, 491, 599, 617, 773, 853, 977, 1009};
-constexpr int MAXN = 1000005;
+constexpr int MAXN = 50005;
 static const std::array<SHash, MAXN+1> Bp = [](){
     std::array<SHash, MAXN+1> Bp;
     Bp[0].val.fill(1ull);
@@ -87,14 +87,14 @@ static const std::array<SHash, MAXN+1> Bp = [](){
 std::vector<SHash> build_prefix(std::string s){
     std::vector<SHash> prefix(s.size() + 1);
     for(int i=1; i<=s.size(); i++){
-        prefix[i] = prefix[i-1]*B + s[i-1];
+        prefix[i] = prefix[i-1] * B + s[i-1];
     }
     return prefix;
 }
 
 SHash get(const std::vector<SHash>&prefix, int l, int r){
     if(l > r) return SHash{};
-    return prefix[r] - prefix[l-1];
+    return prefix[r + 1] - prefix[l] * Bp[r - l + 1];
 }
 
 #endif

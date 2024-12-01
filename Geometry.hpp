@@ -8,7 +8,7 @@ namespace Geometry{
     constexpr f80 INF = 1e20l;
     constexpr f80 EPS = 1e-12l;
     int sign(f80 x){
-        if(fabsl(x) <= EPS) return 0;
+        if(!std::isfinite(x) || fabsl(x) <= EPS) return 0;
         return x > 0 ? 1 : -1;
     }
 
@@ -43,7 +43,7 @@ namespace Geometry{
             return {p.x / r, p.y / r};
         }
         friend bool operator==(const Point& a, const Point&b){
-            return a.between(b, b);
+            return sign(a.x - b.x) == 0 && sign(a.y - b.y) == 0;
         }
 
         f80 square() const{
@@ -116,36 +116,47 @@ namespace Geometry{
             f80 S1 = cross(B[1] - A[0], Point(A)), S2 = cross(B[0]-A[0], Point(A));
             if(fabsl(S1-S2) < EPS) return noPoint;
             return Point{
-                    (S1 * B[0].x - S2 * B[1].x) / (S1 - S2),
-                    (S1 * B[0].y - S2 * B[1].y) / (S1 - S2)
+                (S1 * B[0].x - S2 * B[1].x) / (S1 - S2),
+                (S1 * B[0].y - S2 * B[1].y) / (S1 - S2)
             };
         }
         friend bool parallel(const Line&A, const Line&B){
             return sign(cross(Point(A), Point(B))) == 0;
         }
-        friend bool co_line(const Line&A, const Line&B){
-            if(!parallel(A, B)) return false;
-            return A[0].between(B[0], B[1]) || A[1].between(B[0], B[1]) ||
-                   B[0].between(A[0], A[1]) || B[1].between(A[0], A[1]);
-        }
-        friend bool intersection_ray(const Line&A, const Line&B){
-            if(parallel(A, B)) return co_line(A, B);
+        friend bool isCross_ray(const Line&A, const Line&B){
+            if(parallel(A, B)) return A[1].between(A[0], B[0]) || B[1].between(A[0], B[0]);
             int sgn = sign(cross(Point(A), Point(B)));
-            return sign(B.onLeft(A[0])) == sgn && sign(A.onLeft(B[0])) == -sgn;
+            return sgn * B.onLeft(A[0]) >= 0 && sgn * A.onLeft(B[0]) <= 0;
         }
-        friend bool intersection_strict(const Line&A, const Line&B){
-            if(parallel(A, B)) return co_line(A, B);
+        friend bool isCross_line(const Line&A, const Line&B){
+            if(parallel(A, B)) return
+                A[0].between(B[0], B[1]) || A[1].between(B[0], B[1]) ||
+                B[0].between(A[0], A[1]) || B[1].between(A[0], A[1]);
             return A.onLeft(B[0]) * A.onLeft(B[1]) <= 0 &&
                    B.onLeft(A[0]) * B.onLeft(A[1]) <= 0;
+            // not strict
+            // return A.onLeft(B[0]) * A.onLeft(B[1]) < 0 &&
+            //        B.onLeft(A[0]) * B.onLeft(A[1]) < 0;
         }
-        friend bool intersection_nostrict(const Line&A, const Line&B){
-            if(parallel(A, B)) return co_line(A, B);
-            return A.onLeft(B[0]) * A.onLeft(B[1]) < 0 &&
-                   B.onLeft(A[0]) * B.onLeft(A[1]) < 0;
+        friend bool isCross_line_to_ray(const Line&A, const Line&B){
+            if(parallel(A, B)) return parallel(A, Line{A[0], B[0]});
+            auto L = Line{B[0], Point(A)};
+            return L.onLeft(B[1]) * L.onLeft(A[0]) > 0;
+        }
+        friend bool isCross_line_to_seg(const Line&A, const Line&B){
+            return A.onLeft(B[0]) * A.onLeft(B[1]) <= 0;
+        }
+        friend bool isCross_ray_to_seg(const Line&A, const Line&B){
+            return isCross_line_to_seg(A, B) &&
+                   sign(dot(B[0] - A[0], Point(A))) >= 0 &&
+                   sign(dot(B[1] - A[0], Point(A))) >= 0;
         }
         Point projection(const Point&p)const{
             const Line&L = *this;
             return L[0] + Point(L) * (dot(Point(L), p - L[0]) / Point(L).square());
+        }
+        Point symmetry(const Point&p)const{
+            return projection(p) * 2 - p;
         }
         friend f80 dist(const Line&L, const Point&p){
             f80 A = L[0].y - L[1].y,
