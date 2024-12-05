@@ -60,19 +60,12 @@ namespace ConvexHull{
 
     struct Chull : public Points{
         using Points::vector;
-        Lines vec;
         Chull() = default;
         Chull(const Chull&H) = default;
         explicit Chull(const Points&pts) : Points(pts) {}
 
         Chull& init(){
-            *this = Chull{Andrew_chull(*this)[0]};
-            vec.resize(size());
-            for(int i=0; i<size(); i++){
-                vec[i][0] = (*this)[i];
-                vec[i][1] = (*this)[(i+1) % size()];
-            }
-            return *this;
+            return *this = Chull{Andrew_chull(*this)[0]};
         }
         friend Chull operator+(const Chull&A, const Chull&B){
             return Chull{minkowski_sum(A, B)}.init();
@@ -87,13 +80,17 @@ namespace ConvexHull{
             return Line{p1, p2}.onLeft(p) >= 0;
         }
         f80 area() const{
-            return std::accumulate(vec.begin(), vec.end(), 0.l, [c=(*this)[0]](auto s, auto&L){
-                return s + cross(Point(L), c - L[0]) / 2.l;
+            return std::accumulate(begin(), end(), 0.l, [last_p=back()](auto s, const auto&p)mutable{
+                s += cross(p - last_p, Point{} - last_p) / 2.l;
+                last_p = p;
+                return s;
             });
         }
         Point center() const{
-            return std::accumulate(vec.begin(), vec.end(), Point{}, [](auto&p, auto&L){
-                return (p + L[0] + L[1]) / 3.l * cross(Point(L), p) / 2.l;
+            return std::accumulate(begin(), end(), Point{}, [last_p=back()](auto c, auto&p)mutable{
+                c = c + (p + last_p) / 3.l * cross(p - last_p, Point{} - last_p) / 2.l;
+                last_p = p;
+                return c;
             }) / area();
         }
         std::array<std::size_t, 2> tangency_line(const Point&p) const{
@@ -125,6 +122,15 @@ namespace ConvexHull{
             return {p1, p2};
         }
     };
+    std::array<Line, 4> tangency_line(const Chull&A, const Chull&B){
+        if(A.size() > B.size()) return tangency_line(B, A);
+
+        for(auto&p : A){
+            auto[p1, p2] = B.tangency_line(p);
+        }
+        // todo  tangency_lines of two Convex Hull
+        return {noLine, noLine, noLine, noLine};
+    }
 }
 
 #endif
