@@ -160,8 +160,8 @@ namespace Geometry{
         }
         friend f80 dist(const Line&L, const Point&p){
             f80 A = L[0].y - L[1].y,
-                    B = L[1].x - L[0].x,
-                    C = - L[0].x * A - L[0].y * B;
+                B = L[1].x - L[0].x,
+                C = - L[0].x * A - L[0].y * B;
             return (A * p.x + B * p.y + C) / sqrtl(A * A + B * B);
         }
     } noLine = {noPoint, noPoint};
@@ -183,8 +183,8 @@ namespace Geometry{
             Point p1 = (triangle[0] + triangle[1]) * 0.5;
             Point p2 = (triangle[1] + triangle[2]) * 0.5;
             this->c = intersection(
-                    Line{p1, p1 + (triangle[0] - triangle[1]).rotate(PI / 2.l)},
-                    Line{p2, p2 + (triangle[1] - triangle[2]).rotate(PI / 2.l)}
+                Line{p1, p1 + (triangle[0] - triangle[1]).rotate(PI / 2.l)},
+                Line{p2, p2 + (triangle[1] - triangle[2]).rotate(PI / 2.l)}
             );
             this->r = dist(this->c, triangle[1]);
         }
@@ -224,8 +224,8 @@ namespace Geometry{
             if(C1.r + C2.r < d || fabsl(C1.r - C2.r) > d) return noLine;
             f80 dt = acosl((C1.r * C1.r + d * d - C2.r * C2.r) / (2.l * d * C1.r));
             return Line{
-                    C1.c + ((C2.c - C1.c).unit() * C1.r).rotate(-dt),
-                    C1.c + ((C2.c - C1.c).unit() * C1.r).rotate(dt)
+                C1.c + ((C2.c - C1.c).unit() * C1.r).rotate(-dt),
+                C1.c + ((C2.c - C1.c).unit() * C1.r).rotate(dt)
             };
         }
         friend Line intersection(const Circle&C, const Line&L){
