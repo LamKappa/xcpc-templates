@@ -128,7 +128,7 @@ namespace Geometry{
             int sgn = sign(cross(Point(A), Point(B)));
             return sgn * B.onLeft(A[0]) >= 0 && sgn * A.onLeft(B[0]) <= 0;
         }
-        friend bool isCross_line(const Line&A, const Line&B){
+        friend bool isCross_seg(const Line&A, const Line&B){
             if(parallel(A, B)) return
                 A[0].between(B[0], B[1]) || A[1].between(B[0], B[1]) ||
                 B[0].between(A[0], A[1]) || B[1].between(A[0], A[1]);
