@@ -32,10 +32,9 @@ struct SegSet : std::set<Segment>{
     void merge(SegSet&t){
         auto&s = *this;
         if(s.size() < t.size()) std::swap(s, t);
-        for(auto&sg : t){
-            s.insert(sg);
+        for(auto itr=t.begin(); itr!=t.end(); itr=t.erase(itr)){
+            s.insert(*itr);
         }
-        t.clear();
     }
 };
 
