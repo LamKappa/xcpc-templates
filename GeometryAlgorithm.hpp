@@ -21,7 +21,7 @@ namespace GeometryAlgorithm{
                 auto j = std::next(i) == end? begin : std::next(i);
                 Point pi{*i}, pj{*j};
                 if(p == pi) return true;
-                cnt += intersection_ray(L, Line{pi, pj}) && intersection_ray(L, Line{pj, pi});
+                cnt += isCross_ray_to_seg(L, Line{pi, pj});
             }
             return cnt % 2 == 1;
         }
