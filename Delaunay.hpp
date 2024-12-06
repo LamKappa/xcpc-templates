@@ -53,7 +53,7 @@ namespace Delaunay{
 
                 std::vector<int> I;
                 for(int i=l; i<r; i++){
-                    while(I.size() > 1 && Line{pts[id[I[I.size() - 2]]], pts[id[I.back()]]}.onLeft(pts[id[i]]) <= 0){
+                    while(I.size() > 1 && Line{pts[id[I[I.size() - 2]]], pts[id[I.back()]]}.onLeft(pts[id[i]]) < 0){
                         I.pop_back();
                     }
                     I.push_back(i);
@@ -68,7 +68,7 @@ namespace Delaunay{
                     int npl = -1, npr = -1;
 
                     while(itl != adj[pl].end()){
-                        if(L.onLeft(pts[itl->tar]) < 0) break;
+                        if(L.onLeft(pts[itl->tar]) <= 0) break;
                         auto nxt = std::next(itl);
                         if(nxt != adj[pl].end() &&
                             L.onLeft(pts[nxt->tar]) >= 0 &&
@@ -82,7 +82,7 @@ namespace Delaunay{
                     }
 
                     while(itr != adj[pr].end()){
-                        if(L.onLeft(pts[itr->tar]) < 0) break;
+                        if(L.onLeft(pts[itr->tar]) <= 0) break;
                         auto pre = std::prev(itr);
                         if(pre != adj[pr].end() &&
                             L.onLeft(pts[pre->tar]) >= 0 &&
@@ -98,12 +98,12 @@ namespace Delaunay{
                     if(npl == -1 && npr == -1) break;
                     if(npr == -1 || (npl != -1 && !inside_Circular({pts[pl], pts[pr], pts[npl]}, pts[npr]))){
                         itl = std::next(itl->rev);
-                        if(itl == adj[npl].end() && sign(cross(pts[pl] - pts[npl], Point{0, -1})) >= 0) itl = adj[npl].begin();
+                        if(itl == adj[npl].end() && pts[pl].x <= pts[npl].x) itl = adj[npl].begin();
                         pl = npl;
                         std::tie(itl, itr) = add_edge(pl, itl, pr, std::next(itr));
                     }else{
                         itr = itr->rev;
-                        if(itr == adj[npr].begin() && sign(cross(pts[pr] - pts[npr], Point{0, -1})) <= 0) itr = adj[npr].end();
+                        if(itr == adj[npr].begin() && pts[pr].x > pts[npr].x) itr = adj[npr].end();
                         pr = npr;
                         std::tie(itl, itr) = add_edge(pl, itl, pr, itr);
                     }
