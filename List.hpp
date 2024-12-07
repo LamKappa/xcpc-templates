@@ -5,7 +5,7 @@ template<typename T>
 struct List{
     struct Node{
         T val;
-        int pre, nxt;
+        int pre = 0, nxt = 0;
     };
     struct iterator{
         using difference_type = std::ptrdiff_t;
@@ -107,6 +107,6 @@ struct List{
 };
 
 template<typename T>
-std::vector<typename List<T>::Node> List<T>::data(1, {0, 0, 0});
+std::vector<typename List<T>::Node> List<T>::data(1);
 
 #endif
